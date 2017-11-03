@@ -64,7 +64,7 @@ end
 
 
 #teste problema da P1 (CVRP)
-#Adicionado por Eduardo Brito
+#adicionado por Eduardo Brito
 function test4(solveMIP::Function)
     @testset "Teste CVRP" begin
         tam = 6
@@ -128,6 +128,29 @@ function test4(solveMIP::Function)
         @test getobjectivevalue(m) == 1.69179355
         @test getvalue(x) == resp_x
         @test getvalue(y) == resp_y
+
+        # TODO testar conteudo da struct "sol"
+    end
+end
+
+
+# teste Problema da Producao (PL)
+# adicionado por Eduardo Brito
+function test5(solveMIP::Function)
+    @testset "Problema da Producao" begin
+        m = Model(solver=GurobiSolver())
+        @variable(m, x[1:2] >=0)
+        @constraints(m, begin
+        cons1, 2x[1] + x[2] <= 4
+        cons2, x[1] + 2x[2] <= 4
+        end)
+        @objective(m, :Max, 4x[1] + 3x[2])
+
+        sol = solve(m)
+        @test getobjectivevalue(m) <= 9.33334
+        @test getobjectivevalue(m) >= 9.33332
+        @test getvalue(x) .<= [1.3333334;1.3333334]
+        @test getvalue(x) .>= [1.3333332;1.3333332]
 
         # TODO testar conteudo da struct "sol"
     end
