@@ -110,7 +110,6 @@ function test4(solveMIP::Function)
 
         @objective(m, Min, sum(sum(c[i,j]*y[i,j] for i = 1:tam) for j = 1:tam))
 
-        solve(m)
          resp_x = [ 0.0  0.0       1.72233  0.579707  0.0      0.0
          0.0  0.0       0.0      0.0       0.0      0.0
          0.0  0.0       0.0      0.0       1.42254  0.0
@@ -124,6 +123,7 @@ function test4(solveMIP::Function)
         -0.0   0.0  -0.0   0.0  -0.0   1.0
         0.0   1.0  -0.0  -0.0   0.0  -0.0
         1.0  -0.0  -0.0  -0.0  -0.0   0.0]
+
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 1.69179355
         @test getvalue(x) == resp_x
@@ -169,9 +169,10 @@ function test6(solveMIP::Function)
         cons3, x[1] + x[2] >= 5
         end)
         @objective(m, :Max, 4x[1] + 3x[2])
+        #status = solve(m)
 
         sol = solveMIP(m)
-        @test sol == :Infeasible
+        @test status == :Infeasible
 
         # TODO testar conteudo da struct "sol"
     end
