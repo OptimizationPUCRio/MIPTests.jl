@@ -169,7 +169,7 @@ function test6(solveMIP::Function)
         cons3, x[1] + x[2] >= 5
         end)
         @objective(m, :Max, 4x[1] + 3x[2])
-        #status = solve(m)
+        #status = solve(m)?
 
         sol = solveMIP(m)
         @test status == :Infeasible
@@ -186,10 +186,38 @@ function test7(solveMIP::Function)
         m = Model()
         @variable(m, x[1:2] >=0)
         @objective(m, :Max, 4x[1] + 3x[2])
-        #status = solve(m)
+        #status = solve(m)?
 
         sol = solveMIP(m)
-        @test status == :Infeasible
+        @test status == :Unbounded
+
+        # TODO testar conteudo da struct "sol"
+    end
+end
+
+
+# teste MIP (minimal ~5 binarias)
+# adicionado por Eduardo Brito
+function test8(solveMIP::Function)
+    @testset "MIP Minimal" begin
+        m = Model(solver=GurobiSolver())
+        @variable(m, x[1:5] >=0, Bin)
+        @variable(m, y[1:5] >= 0)
+        @constraints(m, begin
+        cons1, sum(x) <= 4.5
+        cons2, y[1] <= 10(x[1])
+        cons3, y[2] <= 10(x[2])
+        cons4, y[3] <= 10(x[3])
+        cons5, y[4] <= 10(x[4])
+        cons6, y[5] <= 10(x[5])
+        end)
+        @objective(m, :Max, 5y[1] + 4y[2] + 3y[3] + 2y[4] + 1y[5])
+
+
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) == 140
+        @test getvalue(x) == [1;1;1;1;0]
+        @test getvalue(y) == [10;10;10;10;0]
 
         # TODO testar conteudo da struct "sol"
     end
