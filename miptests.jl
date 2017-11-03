@@ -146,11 +146,35 @@ function test5(solveMIP::Function)
         end)
         @objective(m, :Max, 4x[1] + 3x[2])
 
-        sol = solve(m)
+        sol = solveMIP(m)
         @test getobjectivevalue(m) <= 9.33334
         @test getobjectivevalue(m) >= 9.33332
         @test getvalue(x) .<= [1.3333334;1.3333334]
         @test getvalue(x) .>= [1.3333332;1.3333332]
+
+        # TODO testar conteudo da struct "sol"
+    end
+end
+
+
+# teste PL Infeasible
+# adicionado por Eduardo Brito
+
+# teste Pl Infeasible
+# adicionado por Eduardo Brito
+function test6(solveMIP::Function)
+    @testset "Problema Infeasible" begin
+        m = Model()
+        @variable(m, x[1:2] >=0)
+        @constraints(m, begin
+        cons1, 2x[1] + x[2] <= 4
+        cons2, x[1] + 2x[2] <= 4
+        cons3, x[1] + x[2] >= 5
+        end)
+        @objective(m, :Max, 4x[1] + 3x[2])
+
+        sol = solveMIP(m)
+        @test sol == :Infeasible
 
         # TODO testar conteudo da struct "sol"
     end
