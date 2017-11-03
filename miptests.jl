@@ -157,9 +157,6 @@ function test5(solveMIP::Function)
 end
 
 
-# teste PL Infeasible
-# adicionado por Eduardo Brito
-
 # teste Pl Infeasible
 # adicionado por Eduardo Brito
 function test6(solveMIP::Function)
