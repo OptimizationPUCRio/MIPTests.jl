@@ -177,3 +177,20 @@ function test6(solveMIP::Function)
         # TODO testar conteudo da struct "sol"
     end
 end
+
+
+# teste Pl Unbounded
+# adicionado por Eduardo Brito
+function test7(solveMIP::Function)
+    @testset "Problema Unbounded" begin
+        m = Model()
+        @variable(m, x[1:2] >=0)
+        @objective(m, :Max, 4x[1] + 3x[2])
+        #status = solve(m)
+
+        sol = solveMIP(m)
+        @test status == :Infeasible
+
+        # TODO testar conteudo da struct "sol"
+    end
+end
