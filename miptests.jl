@@ -1,12 +1,13 @@
 using JuMP
+using MathProgBase
 using Base.Test
 
 
 # teste exemplo
 # adicionado por Joaquim Garcia
-function test1(solveMIP::Function)
+function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste examplo" begin
-        m = Model()
+        m = Model(solver = solver)
         @variable(m, x >=0)
         @objective(m, :Min, x)
 
@@ -21,9 +22,9 @@ end
 
 #teste problema 1 da lista (mochila)
 #adicionado por Guilherme Bodin
-function test2(solveMIP::Function)
+function test2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste da Mochila" begin
-        m = Model()
+        m = Model(solver = solver)
         @variable(m, x[i=1:3], Bin)
         @constraint(m, 6*x[1] + 5*x[2] + 5*x[3] <= 10)
         @objective(m, Max, 6*x[1] + 4*x[2] + 3*x[3])
@@ -71,11 +72,11 @@ function testSudoku(solveMIP::Function)
 =======
 #teste problema 6 da lista (Expansao da Producao)
 #adicionado por Andrew Rosemberg
-function test3(solveMIP::Function)
+function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     Cinv = 13.16
     M = 200
     @testset "Teste da Expansao da Producao" begin
-        model = Model()
+        model = Model(solver = solver)
         @variable(model, x[i=1:2]>=0)
         @variable(model, u, Bin)
         @objective(model, Max, 4*x[1] + 3*x[2] - u*Cinv)
