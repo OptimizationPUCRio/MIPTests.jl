@@ -43,32 +43,14 @@ function testSudoku(solveMIP::Function)
     n = 9
     model = Model()
     @variable(model, x[i in 1:n, j in 1:n, k in 1:n], Bin)
-    # ============================================
-    # Definir casas preenchidas
-    @constraint(model, x[1,3,4] == 1)
-    @constraint(model, x[1,5,6] == 1)
-    @constraint(model, x[1,9,2] == 1)
-    @constraint(model, x[2,1,8] == 1)
-    @constraint(model, x[2,3,5] == 1)
-    @constraint(model, x[2,6,2] == 1)
-    @constraint(model, x[2,8,3] == 1)
-    @constraint(model, x[3,5,3] == 1)
-    @constraint(model, x[3,8,6] == 1)
-    @constraint(model, x[4,2,2] == 1)
-    @constraint(model, x[4,3,8] == 1)
-    @constraint(model, x[5,6,4] == 1)
-    @constraint(model, x[6,1,7] == 1)
-    @constraint(model, x[6,5,5] == 1)
-    @constraint(model, x[6,9,9] == 1)
-    @constraint(model, x[7,3,2] == 1)
-    @constraint(model, x[7,6,1] == 1)
-    @constraint(model, x[8,2,7] == 1)
-    @constraint(model, x[8,5,4] == 1)
-    @constraint(model, x[8,7,9] == 1)
-    @constraint(model, x[8,8,5] == 1)
-    @constraint(model, x[9,1,6] == 1)
-    @constraint(model, x[9,8,4] == 1)
-    # ============================================
+
+    fixas = [(1,3,4), (1,5,6), (1,9,2), (2,1,8), (2,3,5), (2,6,2), (2,8,3),
+             (3,5,3), (3,8,6), (4,2,2), (4,3,8), (5,6,4), (6,1,7), (6,5,5),
+             (6,9,9), (7,3,2), (7,6,1), (8,2,7), (8,5,4), (8,7,9), (8,8,5),
+             (9,1,6), (9,8,4)]
+     for idx in fixas
+         @constraint(model, x[idx...] == 1)
+     end
     @constraint(model, [j in 1:n, k in 1:n], sum(x[:,j,k]) == 1)
     @constraint(model, [i in 1:n, k in 1:n], sum(x[i,:,k]) == 1)
     @constraint(model, [i in 1:n, j in 1:n], sum(x[i,j,:]) == 1)
