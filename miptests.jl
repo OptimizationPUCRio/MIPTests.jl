@@ -75,6 +75,7 @@ end
 function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     Cinv = 13.16
     M = 200
+    
     @testset "Teste da Expansao da Producao" begin
         model = Model(solver = solver)
         @variable(model, x[i=1:2]>=0)
@@ -87,10 +88,15 @@ function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @constraint(model, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
         @constraint(model, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
 
-        sol = solveMIP(model)
-        @test getobjectivevalue(m) == 9.340000000000002
-        @test getvalue(x) == [3.75, 2.5]
-        @test getvalue(u) == 1
+        status = solveMIP(model)
+
+        #@test status == :Optimal
+        @test abs(getobjectivevalue(model) - 9.34) <= 1E-7
+        solution = model.colVal
+
+        @test abs(solution[1] - 3.75) <= 1E-7 #abs(getvalue(x[1]) - 3.75) <= 1E-7
+        @test abs(solution[2] - 2.5) <= 1E-7 #abs(getvalue(x[2]) - 2.5) <= 1E-7
+        @test abs(solution[3] - 1) <= 1E-7 #abs(getvalue(u) - 1) <= 1E-7
 
         # TODO testar conteudo da struct "sol"
     end
