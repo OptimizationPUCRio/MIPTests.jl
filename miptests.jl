@@ -100,7 +100,7 @@ end
 
 #teste problema da P1 (CVRP)
 #adicionado por Eduardo Brito
-function test4(solveMIP::Function)
+function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste CVRP" begin
         tam = 6
         carros = 2
@@ -124,7 +124,7 @@ function test4(solveMIP::Function)
         30.9586  59.9041   65.278   88.7064   55.0077  43.9505
         46.67    64.3936   32.2418  82.8831   38.0806  68.6481] #Capacidade na rota i,j
 
-        m = Model()
+        m = Model(solver=solver)
 
         @variable(m,x[1:tam,1:tam] >= 0)
         @variable(m,y[1:tam,1:tam], Bin)
@@ -171,9 +171,9 @@ end
 
 # teste Problema da Producao (PL)
 # adicionado por Eduardo Brito
-function test5(solveMIP::Function)
+function test_PL_Simples_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Problema da Producao" begin
-        m = Model(solver=GurobiSolver())
+        m = Model(solver=solver())
         @variable(m, x[1:2] >=0)
         @constraints(m, begin
         cons1, 2x[1] + x[2] <= 4
@@ -194,9 +194,9 @@ end
 
 # teste Pl Infeasible
 # adicionado por Eduardo Brito
-function test6(solveMIP::Function)
+function test_PL_Infeasible_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Problema Infeasible" begin
-        m = Model()
+        m = Model(solver=solver)
         @variable(m, x[1:2] >=0)
         @constraints(m, begin
         cons1, 2x[1] + x[2] <= 4
@@ -216,9 +216,9 @@ end
 
 # teste Pl Unbounded
 # adicionado por Eduardo Brito
-function test7(solveMIP::Function)
+function test_PL_Unbounded_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Problema Unbounded" begin
-        m = Model()
+        m = Model(solver=solver)
         @variable(m, x[1:2] >=0)
         @objective(m, :Max, 4x[1] + 3x[2])
         #status = solve(m)?
@@ -233,9 +233,9 @@ end
 
 # teste MIP (minimal ~5 binarias)
 # adicionado por Eduardo Brito
-function test8(solveMIP::Function)
+function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "MIP Minimal" begin
-        m = Model(solver=GurobiSolver())
+        m = Model(solver=solver)
         @variable(m, x[1:5] >=0, Bin)
         @variable(m, y[1:5] >= 0)
         @constraints(m, begin
