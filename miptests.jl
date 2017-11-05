@@ -272,3 +272,5 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         @test getvalue(y) == [10;10;10;10;0]
 
         # TODO testar conteudo da struct "sol"
+    end
+end
