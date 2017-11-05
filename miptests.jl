@@ -221,10 +221,10 @@ function test_PL_Infeasible_Brito(solveMIP::Function, solver::MathProgBase.Abstr
         cons3, x[1] + x[2] >= 5
         end)
         @objective(m, :Max, 4x[1] + 3x[2])
-        #status = solve(m)?
 
         sol = solveMIP(m)
-        @test status == :Infeasible
+
+        @test sol.ext[:status] == :Infeasible
 
         # TODO testar conteudo da struct "sol"
     end
@@ -238,10 +238,9 @@ function test_PL_Unbounded_Brito(solveMIP::Function, solver::MathProgBase.Abstra
         m = Model(solver=solver)
         @variable(m, x[1:2] >=0)
         @objective(m, :Max, 4x[1] + 3x[2])
-        #status = solve(m)?
 
         sol = solveMIP(m)
-        @test status == :Unbounded
+        @test sol.ext[:status] == :Unbounded
 
         # TODO testar conteudo da struct "sol"
     end
@@ -265,7 +264,6 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         end)
         @objective(m, :Max, 5y[1] + 4y[2] + 3y[3] + 2y[4] + 1y[5])
 
-
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 140
         @test getvalue(x) == [1;1;1;1;0]
@@ -274,3 +272,6 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         # TODO testar conteudo da struct "sol"
     end
 end
+
+# teste MIP Pequeno (~5 binarias)
+# adicionado por Eduardo Brito
