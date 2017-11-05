@@ -108,6 +108,5 @@ function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.Abstrac
 
         sol = solveMIP(m)
         @test sol.ext[:status] == :Infeasible
-
     end
 end
