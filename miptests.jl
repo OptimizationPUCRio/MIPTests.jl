@@ -20,8 +20,8 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
 end
 
 
-# teste problema 1 da lista (mochila)
-# adicionado por Guilherme Bodin
+#teste problema 1 da lista (mochila)
+#adicionado por Guilherme Bodin
 function test2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste da Mochila" begin
         m = Model(solver = solver)
@@ -65,13 +65,13 @@ function testSudoku(solveMIP::Function, solver::MathProgBase.AbstractMathProgSol
         @test getvalue(x[1,1,3]) == 1
         @test getvalue(x[8,1,1]) == 0
         @test getvalue(x[8,1,9]) == 1
-        @test getvalue(x[6,6,3]) == 1
         @test sum(getvalue(x[6,6,4:9])) == 0
+        @test getvalue(x[6,6,3]) == 1
     end
 end
 
-# teste problema 6 da lista (Expansao da Producao)
-# adicionado por Andrew Rosemberg
+#teste problema 6 da lista (Expansao da Producao)
+#adicionado por Andrew Rosemberg
 function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     Cinv = 13.16
     M = 200
