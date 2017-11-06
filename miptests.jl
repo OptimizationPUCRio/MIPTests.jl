@@ -111,3 +111,40 @@ function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.Abstrac
         @test m.ext[:status] == :Infeasible
     end
 end
+
+# teste Caminho mais curto
+# adicionado por Carlos
+function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste caminho mais curto" begin
+
+        m = Model()
+        @variable(m, f[i in 1:6, j in 1:6], Bin)
+
+        A = [0 1 1 0 0 0
+             0 0 0 1 0 0
+             0 1 0 1 1 0
+             0 0 0 0 1 1
+             0 0 0 0 0 1
+             0 0 0 0 0 0]
+
+        c = [0 2 2 0 0 0
+             0 0 0 3 0 0
+             0 1 0 1 3 0
+             0 0 0 0 1 1
+             0 0 0 0 0 2
+             0 0 0 0 0 0]
+
+        b = [1;0;0;0;0;-1]
+
+        @constraint(m,[v=1:6], sum(A[v,j]*f[v,j] for j=1:6) - sum(A[i,v]*f[i,v] for i=1:6) == b[v])
+
+        @objective(m, Min, sum(A[i,j]*c[i,j]*f[i,j] for i=1:6, j=1:6))
+
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) == 4
+        @test getvalue(f[1,3]) == 1
+        @test getvalue(f[3,4]) == 1
+        @test getvalue(f[4,6]) == 1
+        @test sum(getvalue(f)) == 3
+    end
+end
