@@ -95,3 +95,19 @@ function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         # TODO testar conteudo da struct "sol"
     end
 end
+
+# teste mochila binária infeasible
+# adicionado por Raphael Saavedra
+function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste Mochila infeasible" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3], Bin)
+        @constraint(m, 6*x[1] + 5*x[2] + 5*x[3] <= 5)
+        @constraint(m, x[1] == 1)
+        @objective(m, Max, 6*x[1] + 4*x[2] + 3*x[3])
+
+        sol = solveMIP(m)
+        @test sol == :Infeasible
+        @test m.ext[:status] == :Infeasible
+    end
+end
