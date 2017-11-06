@@ -2,6 +2,7 @@ using JuMP
 using MathProgBase
 using Base.Test
 
+#≈
 
 # teste exemplo
 # adicionado por Joaquim Garcia
@@ -177,7 +178,7 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
         1.0  -0.0  -0.0  -0.0  -0.0   0.0]
 
         sol = solveMIP(m)
-        @test getobjectivevalue(m) == 1.69179355
+        @test getobjectivevalue(m) ≈ 1.69179355 atol=exp10(-5)
         @test getvalue(x) == resp_x
         @test getvalue(y) == resp_y
 
@@ -199,10 +200,8 @@ function test_PL_Simples_Brito(solveMIP::Function, solver::MathProgBase.Abstract
         @objective(m, :Max, 4x[1] + 3x[2])
 
         sol = solveMIP(m)
-        @test getobjectivevalue(m) <= 9.33334
-        @test getobjectivevalue(m) >= 9.33332
-        @test getvalue(x) .<= [1.3333334;1.3333334]
-        @test getvalue(x) .>= [1.3333332;1.3333332]
+        @test getobjectivevalue(m) ≈ 9.33334 atol = exp10(-5)
+        @test getvalue(x) ≈ [1.3333334;1.3333334] atol = exp10(-5)
 
         # TODO testar conteudo da struct "sol"
     end
@@ -267,11 +266,43 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 140
         @test getvalue(x) == [1;1;1;1;0]
-        @test getvalue(y) == [10;10;10;10;0]
+        @test getvalue(y) ≈ [10;10;10;10;0]
 
         # TODO testar conteudo da struct "sol"
     end
 end
 
-# teste MIP Pequeno (~5 binarias)
+# teste MIP Pequeno (~50 binarias) ~ The Assignment problem:
 # adicionado por Eduardo Brito
+function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste MIP Pequeno, Assignment problem" begin
+    n  = 8
+    if true
+        c = [0.445321 0.499462 0.409753 0.471825 0.1172 0.820595 0.629809 0.333445; 0.197025 0.160481 0.00865311 0.355901 0.137367 0.199186 0.718575 0.716486;
+         0.654497 0.904598 0.321483 0.171736 0.050554 0.254487 0.540093 0.724331; 0.254369 0.593379 0.205166 0.288702 0.499699 0.308233 0.869406 0.353904;
+         0.854515 0.00978121 0.520072 0.985762 0.72076 0.317384 0.268573 0.315585; 0.0212753 0.754076 0.753672 0.158407 0.212617 0.403343 0.71157 0.17261;
+         0.651835 0.24596 0.700141 0.989018 0.723494 0.236829 0.891181 0.568245; 0.257637 0.883802 0.0252095 0.0273074 0.450492 0.560833 0.820861 0.893546]
+    end
+    m = Model(solver = solver)
+    @variable(m, x[i=1:n,j=1:n] >=0, Bin)
+    @objective(m, :Min, sum(c[i,j]*x[i,j] for i = 1:n, j = 1:n))
+    @constraints(m,begin
+    linhas[i=1:n], sum(x[i,j] for j = 1:n) == 1
+    colunas[j=1:n], sum(x[i,j] for i = 1:n) == 1
+    end)
+
+    sol = solveMIP(m)
+    @test getobjectivevalue(m) ≈ 1.264 atol = exp10(-5)
+    @test abs.(getvalue(x)) == abs.([0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                                    0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0;
+                                    0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0;
+                                    0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0;
+                                    0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
+                                    1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                                    0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                                    0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0])
+
+
+        # TODO testar conteudo da struct "sol"
+    end
+end
