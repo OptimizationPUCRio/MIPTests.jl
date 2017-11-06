@@ -180,7 +180,7 @@ function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathPro
   #------------------------------------------------------------------------------
     sol = solveMIP(m)
 
-    @test ≈(getobjectivevalue(m), 289892.9539, atol=1e-3)
+    @test getobjectivevalue(m) ≈ 289892.9539 atol=1e-3
     @test getvalue(p[:,24]) == [400; zeros(9)]
     @test getvalue(v[1,:]) == ones(24)
     @test getvalue(v[:,1]) == [1; zeros(9)]
