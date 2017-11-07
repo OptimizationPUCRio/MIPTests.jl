@@ -42,7 +42,7 @@ end
 function testSudoku(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste Sudoku" begin
         n = 9
-        model = Model()
+        model = Model(solver = solver)
         @variable(model, x[i in 1:n, j in 1:n, k in 1:n], Bin)
 
         fixas = [(1,3,4), (1,5,6), (1,9,2), (2,1,8), (2,3,5), (2,6,2), (2,8,3),
