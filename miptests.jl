@@ -63,8 +63,8 @@ function testSudoku(solveMIP::Function, solver::MathProgBase.AbstractMathProgSol
         @test sum(getvalue(x)) == 81
         @test getvalue(x[1,1,1]) == 0
         @test getvalue(x[1,1,3]) == 1
-        @test getvalue(x[8,1,1]) == 0
-        @test getvalue(x[8,1,9]) == 1
+        @test getvalue(x[8,1,1]) == 1
+        @test getvalue(x[8,1,9]) == 0
         @test sum(getvalue(x[6,6,4:9])) == 0
         @test getvalue(x[6,6,3]) == 1
     end
