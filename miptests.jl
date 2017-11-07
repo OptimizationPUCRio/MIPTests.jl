@@ -266,7 +266,7 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 140
         @test getvalue(x) == [1;1;1;1;0]
-        @test getvalue(y) ≈ [10;10;10;10;0]
+        @test getvalue(y) ≈ [10;10;10;10;0] atol = exp10(-5)
 
         # TODO testar conteudo da struct "sol"
     end
