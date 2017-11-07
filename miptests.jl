@@ -89,15 +89,14 @@ function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @constraint(model, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
 
         sol = solveMIP(model)
-        @test getobjectivevalue(m) == 9.340000000000002
-        @test getvalue(x) == [3.75, 2.5]
+        @test getobjectivevalue(model) ≈ 9.34 atol = exp10(-5)
+        @test getvalue(x) ≈ [3.75, 2.5]
         @test getvalue(u) == 1
 
         # TODO testar conteudo da struct "sol"
     end
 end
 
-=======
 # teste mochila binária infeasible
 # adicionado por Raphael Saavedra
 function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -111,7 +110,7 @@ function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.Abstrac
         sol = solveMIP(m)
         @test sol.ext[:status] == :Infeasible
 
-        >>>>>>> origin/Branch-Raphael
+        #>>>>>>> origin/Branch-Raphael
     end
 end
 
@@ -191,8 +190,8 @@ end
 # adicionado por Eduardo Brito
 function test_PL_Simples_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Problema da Producao" begin
-        m = Model(solver=solver())
-        @variable(m, x[1:2] >=0)
+        m = Model(solver=solver)
+        @variable(m, x[1:2] >=0,Int)
         @constraints(m, begin
         cons1, 2x[1] + x[2] <= 4
         cons2, x[1] + 2x[2] <= 4
