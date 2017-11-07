@@ -108,7 +108,7 @@ function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.Abstrac
         @objective(m, Max, 6*x[1] + 4*x[2] + 3*x[3])
 
         sol = solveMIP(m)
-<<<<<<< HEAD
+        #<<<<<<< HEAD
         @test sol.ext[:status] == :Infeasible
 
         #>>>>>>> origin/Branch-Raphael
