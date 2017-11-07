@@ -136,15 +136,15 @@ function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSo
 
         b = [1;0;0;0;0;-1]
 
-        @constraint(m,[v=1:6], sum(A[v,j]*f[v,j] for j=1:6) - sum(A[i,v]*f[i,v] for i=1:6) == b[v])
+        @constraint(m,[v=1:6], sum(A[v,j]*x[v,j] for j=1:6) - sum(A[i,v]*x[i,v] for i=1:6) == b[v])
 
-        @objective(m, Min, sum(A[i,j]*c[i,j]*f[i,j] for i=1:6, j=1:6))
+        @objective(m, Min, sum(A[i,j]*c[i,j]*x[i,j] for i=1:6, j=1:6))
 
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 4
-        @test getvalue(f[1,3]) == 1
-        @test getvalue(f[3,4]) == 1
-        @test getvalue(f[4,6]) == 1
-        @test sum(getvalue(f)) == 3
+        @test getvalue(x[1,3]) == 1
+        @test getvalue(x[3,4]) == 1
+        @test getvalue(x[4,6]) == 1
+        @test sum(getvalue(x)) == 3
     end
 end
