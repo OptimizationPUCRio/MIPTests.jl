@@ -88,9 +88,9 @@ function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @constraint(model, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
 
         sol = solveMIP(model)
-        @test ≈(getobjectivevalue(model), 9.340000000000002, atol=1E-07)
-        @test ≈(getvalue(x), [3.75, 2.5], atol=1E-07)
-        @test ≈(getvalue(u), 1, atol=1E-07)
+        @test getobjectivevalue(model) ≈ 9.340000000000002 atol=1E-07
+        @test getvalue(x) ≈ [3.75, 2.5] atol=1E-07
+        @test getvalue(u) ≈ 1 atol=1E-07
 
         # TODO testar conteudo da struct "sol"
     end
