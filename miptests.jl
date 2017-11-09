@@ -193,7 +193,7 @@ end
 function test_PL_Simples_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Problema da Producao" begin
         m = Model(solver=solver)
-        @variable(m, x[1:2] >=0,Int)
+        @variable(m, x[1:2] >=0)
         @constraints(m, begin
         cons1, 2x[1] + x[2] <= 4
         cons2, x[1] + 2x[2] <= 4
