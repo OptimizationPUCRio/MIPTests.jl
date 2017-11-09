@@ -311,7 +311,6 @@ function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
     end
 end
 
-
 # teste n-K robusto - trabalho da P1 - caso com 10 geradores e K = 2
 # adicionado por Raphael Saavedra
 function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -388,3 +387,41 @@ function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathPro
 
   end
 end
+
+# teste Caminho mais curto
+# adicionado por Carlos
+function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste caminho mais curto" begin
+
+        m = Model(solver = solver)
+        @variable(m, f[i in 1:6, j in 1:6], Bin)
+
+        A = [0 1 1 0 0 0
+             0 0 0 1 0 0
+             0 1 0 1 1 0
+             0 0 0 0 1 1
+             0 0 0 0 0 1
+             0 0 0 0 0 0]
+
+        c = [0 2 2 0 0 0
+             0 0 0 3 0 0
+             0 1 0 1 3 0
+             0 0 0 0 1 1
+             0 0 0 0 0 2
+             0 0 0 0 0 0]
+
+        b = [1;0;0;0;0;-1]
+
+        @constraint(m,[v=1:6], sum(A[v,j]*x[v,j] for j=1:6) - sum(A[i,v]*x[i,v] for i=1:6) == b[v])
+
+        @objective(m, Min, sum(A[i,j]*c[i,j]*x[i,j] for i=1:6, j=1:6))
+
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) == 4
+        @test getvalue(x[1,3]) == 1
+        @test getvalue(x[3,4]) == 1
+        @test getvalue(x[4,6]) == 1
+        @test sum(getvalue(x)) == 3
+    end
+end
+
