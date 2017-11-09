@@ -108,10 +108,10 @@ function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.Abstrac
         @objective(m, Max, 6*x[1] + 4*x[2] + 3*x[3])
 
         sol = solveMIP(m)
-        #<<<<<<< HEAD
-        @test sol.ext[:status] == :Infeasible
 
-        #>>>>>>> origin/Branch-Raphael
+        @test m.ext[:status] == :Infeasible
+
+
     end
 end
 
@@ -177,7 +177,7 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
         0.0   1.0  -0.0  -0.0   0.0  -0.0
         1.0  -0.0  -0.0  -0.0  -0.0   0.0]
 
-        sol = solveMIP(m)
+        solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.69179355 atol=exp10(-5)
         @test getvalue(x) == resp_x
         @test getvalue(y) == resp_y
@@ -199,7 +199,7 @@ function test_PL_Simples_Brito(solveMIP::Function, solver::MathProgBase.Abstract
         end)
         @objective(m, :Max, 4x[1] + 3x[2])
 
-        sol = solveMIP(m)
+        solveMIP(m)
         @test getobjectivevalue(m) ≈ 9.33334 atol = exp10(-5)
         @test getvalue(x) ≈ [1.3333334;1.3333334] atol = exp10(-5)
 
@@ -221,9 +221,9 @@ function test_PL_Infeasible_Brito(solveMIP::Function, solver::MathProgBase.Abstr
         end)
         @objective(m, :Max, 4x[1] + 3x[2])
 
-        sol = solveMIP(m)
+        solveMIP(m)
 
-        @test sol.ext[:status] == :Infeasible
+        @test m.ext[:status] == :Infeasible
 
         # TODO testar conteudo da struct "sol"
     end
@@ -238,8 +238,8 @@ function test_PL_Unbounded_Brito(solveMIP::Function, solver::MathProgBase.Abstra
         @variable(m, x[1:2] >=0)
         @objective(m, :Max, 4x[1] + 3x[2])
 
-        sol = solveMIP(m)
-        @test sol.ext[:status] == :Unbounded
+        solveMIP(m)
+        @test m.ext[:status] == :Unbounded
 
         # TODO testar conteudo da struct "sol"
     end
@@ -263,7 +263,7 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         end)
         @objective(m, :Max, 5y[1] + 4y[2] + 3y[3] + 2y[4] + 1y[5])
 
-        sol = solveMIP(m)
+        solveMIP(m)
         @test getobjectivevalue(m) == 140
         @test getvalue(x) == [1;1;1;1;0]
         @test getvalue(y) ≈ [10;10;10;10;0] atol = exp10(-5)
@@ -291,7 +291,7 @@ function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
     colunas[j=1:n], sum(x[i,j] for i = 1:n) == 1
     end)
 
-    sol = solveMIP(m)
+    solveMIP(m)
     @test getobjectivevalue(m) ≈ 1.264 atol = exp10(-5)
     @test abs.(getvalue(x)) == abs.([0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
                                     0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0;
@@ -304,10 +304,9 @@ function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
 
 
         # TODO testar conteudo da struct "sol"
-=======
-        @test sol == :Infeasible
-        @test m.ext[:status] == :Infeasible
->>>>>>> 01e6331a4cde63dcdc40e7395aaa925119e22a32
+
+        @test m.ext[:status] == :Optimal
+
     end
 end
 
