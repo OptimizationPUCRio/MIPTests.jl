@@ -194,7 +194,7 @@ end
 function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste caminho mais curto" begin
 
-        m = Model()
+        m = Model(solver = solver)
         @variable(m, f[i in 1:6, j in 1:6], Bin)
 
         A = [0 1 1 0 0 0
