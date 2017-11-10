@@ -89,7 +89,7 @@ function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @constraint(model, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
 
         sol = solveMIP(model)
-    
+
         @test getobjectivevalue(model) ≈ 9.340000000000002 atol=1E-07
         @test getvalue(x) ≈ [3.75, 2.5] atol=1E-07
         @test getvalue(u) ≈ 1 atol=1E-07
@@ -164,13 +164,6 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
 
         @objective(m, Min, sum(sum(c[i,j]*y[i,j] for i = 1:tam) for j = 1:tam))
 
-         resp_x = [ 0.0  0.0       1.72233  0.579707  0.0      0.0
-         0.0  0.0       0.0      0.0       0.0      0.0
-         0.0  0.0       0.0      0.0       1.42254  0.0
-         0.0  0.0       0.0      0.0       0.0      0.567123
-         0.0  0.874746  0.0      0.0       0.0      0.0
-         0.0  0.0       0.0      0.0       0.0      0.0]
-
          resp_y = [0.0  -0.0   1.0   1.0  -0.0   0.0
         1.0   0.0  -0.0  -0.0  -0.0  -0.0
         -0.0  -0.0   0.0   0.0   1.0  -0.0
@@ -180,8 +173,7 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.69179355 atol=exp10(-5)
-        @test getvalue(x) == resp_x
-        @test getvalue(y) == resp_y
+        @test getvalue(y) ≈ resp_y atol=exp10(-8)
 
         # TODO testar conteudo da struct "sol"
     end
@@ -310,7 +302,6 @@ function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
 
     end
 end
-
 
 # teste n-K robusto - trabalho da P1 - caso com 10 geradores e K = 2
 # adicionado por Raphael Saavedra
