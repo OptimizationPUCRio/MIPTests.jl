@@ -43,23 +43,23 @@ end
 function testSudoku(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Teste Sudoku" begin
         n = 9
-        model = Model(solver = solver)
-        @variable(model, x[i in 1:n, j in 1:n, k in 1:n], Bin)
+        m = Model(solver = solver)
+        @variable(m, x[i in 1:n, j in 1:n, k in 1:n], Bin)
 
         fixas = [(1,3,4), (1,5,6), (1,9,2), (2,1,8), (2,3,5), (2,6,2), (2,8,3),
                 (3,5,3), (3,8,6), (4,2,2), (4,3,8), (5,6,4), (6,1,7), (6,5,5),
                 (6,9,9), (7,3,2), (7,6,1), (8,2,7), (8,5,4), (8,7,9), (8,8,5),
                 (9,1,6), (9,8,4)]
         for idx in fixas
-            @constraint(model, x[idx...] == 1)
+            @constraint(m, x[idx...] == 1)
         end
-        @constraint(model, [j in 1:n, k in 1:n], sum(x[:,j,k]) == 1)
-        @constraint(model, [i in 1:n, k in 1:n], sum(x[i,:,k]) == 1)
-        @constraint(model, [i in 1:n, j in 1:n], sum(x[i,j,:]) == 1)
-        @constraint(model, [p in [0,3,6], q in [0,3,6], k in 1:n], sum(sum(x[i+p,j+q,k] for i in 1:3) for j in 1:3) == 1)
-        @objective(model, Min, 0)
+        @constraint(m, [j in 1:n, k in 1:n], sum(x[:,j,k]) == 1)
+        @constraint(m, [i in 1:n, k in 1:n], sum(x[i,:,k]) == 1)
+        @constraint(m, [i in 1:n, j in 1:n], sum(x[i,j,:]) == 1)
+        @constraint(m, [p in [0,3,6], q in [0,3,6], k in 1:n], sum(sum(x[i+p,j+q,k] for i in 1:3) for j in 1:3) == 1)
+        @objective(m, Min, 0)
 
-        sol = solveMIP(model)
+        sol = solveMIP(m)
         @test getobjectivevalue(m) == 0
         @test sum(getvalue(x)) == 81
         @test getvalue(x[1,1,1]) == 0
@@ -108,7 +108,7 @@ function testInfeasibleKnapsack(solveMIP::Function, solver::MathProgBase.Abstrac
         @constraint(m, x[1] == 1)
         @objective(m, Max, 6*x[1] + 4*x[2] + 3*x[3])
 
-        sol = solveMIP(m)
+        sol = solveMIP(m)s
 
         @test m.ext[:status] == :Infeasible
 
