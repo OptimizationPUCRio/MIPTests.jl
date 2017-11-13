@@ -424,3 +424,192 @@ function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSo
         @test sum(getvalue(x)) == 3
     end
 end
+
+#teste problema 6 da lista modificado 1 (Expansao da Producao Unbounded)
+#adicionado por Andrew Rosemberg
+function test3_2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    Cinv = 13.16
+    M = 200
+    @testset "Teste da Expansao da Producao Unbounded" begin
+        model = Model(solver = solver)
+        @variable(model, x[i=1:2]>=0)
+        @variable(model, u, Bin)
+        @objective(model, Max, 4*x[1] + 3*x[2] - u*Cinv)
+
+        @constraint(model, 2*x[1] + 1*x[2] >= 4 +u*M)
+        @constraint(model, 1*x[1] + 2*x[2] >= 4 +u*M)
+
+        @constraint(model, 1*x[1] + 0.1*x[2] >= 4 +(1-u)*M)
+        @constraint(model, 0.4*x[1] + 1*x[2] >= 4 +(1-u)*M)
+
+        solveMIP(model)
+
+        @test model.ext[:status] == :Unbounded
+    end
+end
+
+
+#teste problema 6 da lista modificado 2 (Expansao da Producao Infeasible)
+#adicionado por Andrew Rosemberg
+function test3_3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    Cinv = 13.16
+    M = 200
+    @testset "Teste da Expansao da Infeasible" begin
+        model = Model(solver = solver)
+        @variable(model, x[i=1:2]>=0)
+        @variable(model, u, Bin)
+        @objective(model, Max, 4*x[1] + 3*x[2] - u*Cinv)
+
+        @constraint(model, 2*x[1] + 1*x[2] <= 4 -u*M)
+        @constraint(model, 1*x[1] + 2*x[2] <= 4 -u*M)
+
+        @constraint(model, 1*x[1] + 0.1*x[2] <= 4 -(1-u)*M)
+        @constraint(model, 0.4*x[1] + 1*x[2] <= 4 -(1-u)*M)
+
+        solveMIP(model)
+
+        @test model.ext[:status] == :Infeasible
+    end
+end
+
+#teste Feature selection pequeno (Viavel)
+#adicionado por Andrew Rosemberg
+function test_feature_selection_pequeno_viavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    srand(2)
+    numpossiblevar = 50
+    numvar = 40
+    numconstraints = 50
+    datamatrix = rand(numconstraints,numpossiblevar)
+    weights = [rand(numvar);zeros(numpossiblevar-numvar)]
+    index_vector = datamatrix*weights
+    maxweight  = maximum(weights)+1
+    @testset "Teste Feature selection pequeno Viavel" begin
+        model = Model(solver = solver)
+        @objective(model, Max, 0)
+
+        @variable(model, w[i=1:numpossiblevar]>=0)
+        @variable(model, u[i=1:numpossiblevar], Bin)
+
+        @constraint(model, sum(u) == numvar)
+
+        @constraints(model,begin
+          dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
+        end)
+
+        @constraints(model,begin
+          linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
+        end)
+
+        solveMIP(model)
+
+        utest = [ones(numvar);zeros(numpossiblevar-numvar)]
+        @test utest == getvalue(u)
+        @test getvalue(w) ≈ weights atol=1E-07
+    end
+end
+
+#teste Feature selection medio (Viavel)
+#adicionado por Andrew Rosemberg
+function test_feature_selection_medio(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    srand(1000)
+    numpossiblevar = 500
+    numvar = 15
+    numconstraints = 100
+    datamatrix = rand(numconstraints,numpossiblevar)
+    weights = [rand(numvar);zeros(numpossiblevar-numvar)]
+    index_vector = datamatrix*weights
+    maxweight  = maximum(weights)+1
+    @testset "Teste Feature selection pequeno Viavel" begin
+        model = Model(solver = solver)
+        @objective(model, Max, 0)
+
+        @variable(model, w[i=1:numpossiblevar]>=0)
+        @variable(model, u[i=1:numpossiblevar], Bin)
+
+        @constraint(model, sum(u) == numvar)
+
+        @constraints(model,begin
+          dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
+        end)
+
+        @constraints(model,begin
+          linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
+        end)
+
+        solveMIP(model)
+
+        utest = [ones(numvar);zeros(numpossiblevar-numvar)]
+        @test utest == getvalue(u)
+        @test getvalue(w) ≈ weights atol=1E-07
+    end
+end
+
+#teste Feature selection grande (Viavel)
+#adicionado por Andrew Rosemberg
+function test_feature_selection_grande(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    srand(1000)
+    numpossiblevar = 5000
+    numvar = 15
+    numconstraints = 100
+    datamatrix = rand(numconstraints,numpossiblevar)
+    weights = [rand(numvar);zeros(numpossiblevar-numvar)]
+    index_vector = datamatrix*weights
+    maxweight  = maximum(weights)+1
+    @testset "Teste Feature selection pequeno Viavel" begin
+        model = Model(solver = solver)
+        @objective(model, Max, 0)
+
+        @variable(model, w[i=1:numpossiblevar]>=0)
+        @variable(model, u[i=1:numpossiblevar], Bin)
+
+        @constraint(model, sum(u) == numvar)
+
+        @constraints(model,begin
+          dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
+        end)
+
+        @constraints(model,begin
+          linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
+        end)
+
+        solveMIP(model)
+
+        utest = [ones(numvar);zeros(numpossiblevar-numvar)]
+        @test utest == getvalue(u)
+        @test getvalue(w) ≈ weights atol=1E-07
+    end
+end
+
+#teste Feature selection pequeno (Inviavel)
+#adicionado por Andrew Rosemberg
+function test_feature_selection_pequeno_inviavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    srand(2)
+    numpossiblevar = 50
+    numvar = 40
+    numconstraints = 50
+    datamatrix = rand(numconstraints,numpossiblevar)
+    weights = [rand(numvar);zeros(numpossiblevar-numvar)]
+    index_vector = -datamatrix*weights
+    maxweight  = maximum(weights)+1
+    @testset "Teste Feature selection pequeno Viavel" begin
+        model = Model(solver = solver)
+        @objective(model, Max, 0)
+
+        @variable(model, w[i=1:numpossiblevar]>=0)
+        @variable(model, u[i=1:numpossiblevar], Bin)
+
+        @constraint(model, sum(u) == numvar)
+
+        @constraints(model,begin
+          dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
+        end)
+
+        @constraints(model,begin
+          linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
+        end)
+
+        solveMIP(model)
+
+        @test model.ext[:status] == :Infeasible
+    end
+end
