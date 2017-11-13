@@ -613,3 +613,62 @@ function test_feature_selection_pequeno_inviavel(solveMIP::Function, solver::Mat
         @test model.ext[:status] == :Infeasible
     end
 end
+
+#teste problema ucla : https://www.math.ucla.edu/~tom/LP.pdf pg 9 (PL unbounded)
+#adicionado por Andrew Rosemberg
+function teste_PL_andrew_unbounded(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL viavel da ucla" begin
+        model = Model(solver = solver)
+        @variable(model, x[i=1:3]>=0)
+        @variable(model, x4)
+        @objective(model, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+
+        @constraint(model, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
+        @constraint(model, x[1] - x[2] + 2*x[3] == 2)
+        @constraint(model, x[1] + x[2] + x[3] + x4 >= 1)
+
+        solveMIP(model)
+
+        @test model.ext[:status] == :Unbounded
+    end
+end
+
+#teste problema ucla modificado (PL viavel)
+#adicionado por Andrew Rosemberg
+function teste_PL_andrew_viavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL viavel da ucla" begin
+        model = Model(solver = solver)
+        @variable(model, x[i=1:3]>=0)
+        @variable(model, x4>=0)
+        @objective(model, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+
+        @constraint(model, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
+        @constraint(model, x[1] - x[2] + 2*x[3] == 2)
+        @constraint(model, x[1] + x[2] + x[3] + x4 >= 1)
+
+        solveMIP(model)
+
+        @test getobjectivevalue(model) == 27
+        @test getvalue(x) ≈ [0.0;3.6;2.8] atol=1E-07
+        @test getvalue(x4) == 0
+    end
+end
+
+#teste problema ucla modificado 2 (PL inviavel)
+#adicionado por Andrew Rosemberg
+function teste_PL_andrew_inviavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL viavel da ucla" begin
+        model = Model(solver = solver)
+        @variable(model, x[i=1:3]>=0)
+        @variable(model, x4>=0)
+        @objective(model, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+
+        @constraint(model, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= -10)
+        @constraint(model, x[1] - x[2] + 2*x[3] == 2)
+        @constraint(model, x[1] + x[2] + x[3] + x4 >= 1)
+
+        solveMIP(model)
+
+        @test model.ext[:status] == :Infeasible
+    end
+end
