@@ -425,6 +425,7 @@ function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSo
     end
 end
 
+
 #teste problema 6 da lista modificado 1 (Expansao da Producao Unbounded)
 #adicionado por Andrew Rosemberg
 function test3_2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -670,5 +671,180 @@ function teste_PL_andrew_inviavel(solveMIP::Function, solver::MathProgBase.Abstr
         solveMIP(model)
 
         @test model.ext[:status] == :Infeasible
+    end
+end
+# teste MIP unbounded
+# adicionado por Raphael Saavedra
+function testUnboundedKnapsack(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste Mochila unbounded" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3], Bin)
+        @variable(m, y >= 0)
+        @constraint(m, 6*x[1] + 5*x[2] + 5*x[3] <= 5)
+        @objective(m, Max, 6*x[1] + 4*x[2] + 3*x[3] + y)
+
+        sol = solveMIP(m)
+
+        @test m.ext[:status] == :Unbounded
+    end
+end
+
+# teste Infeasible Unit Commitment
+# adicionado por Raphael Saavedra
+function testInfeasibleUC(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+  #------------------------------------------------------------------------------
+  # Parameters
+  T = collect(1:10) # periods
+  N = collect(1:5) # generators
+  p0 = zeros(N[end]) # initial power output
+  v0 = zeros(N[end]) # initial on/off state
+  D = [400; 390; 380; 370; 360; 350; 340; 330; 320; 500] # demand
+  Cf = [100; 100; 100; 100; 100] # fixed cost
+  Cl = [10; 20; 30; 40; 50] # linear cost
+  Pmax = [100; 100; 100; 100; 100] # generator capacity
+  Pmin = [10; 10; 10; 10; 10] # minimum power output
+  RD = [10; 20; 30; 40; 50] # ramp-down limit
+  RU = [10; 25; 30; 40; 50] # ramp-up limit
+  SD = RD # shutdown ramp limit
+  SU = RU # startup ramp limit
+  #------------------------------------------------------------------------------
+  @testset "Teste Infeasible Unit Commitment" begin
+
+    m = Model(solver = solver)
+    #----------------------------------------------------------------------------
+    # Variables
+    @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
+    @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
+    #----------------------------------------------------------------------------
+    # Constraints
+    @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
+    @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
+    @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
+    @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
+    @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+    # Constraints regarding initial state
+    @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
+    @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+    #----------------------------------------------------------------------------
+    # Objective function
+    @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T))
+  #------------------------------------------------------------------------------
+    sol = solveMIP(m)
+
+    @test m.ext[:status] == :Infeasible
+
+  end
+end
+
+# teste PL simples
+# adicionado por Raphael Saavedra
+function test_PL_Simples_Raphael(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL simples" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3] >= 0)
+        @constraint(m, x[1] + x[2] <= 2)
+        @constraint(m, x[1] + x[3] <= 2)
+        @constraint(m, x[2] + x[3] <= 2)
+        @objective(m, Max, x[1] + x[2] - 2*x[3])
+
+        sol = solveMIP(m)
+
+        @test m.ext[:status] == :Optimal
+        @test getobjectivevalue(m) == 2
+    end
+end
+
+# teste PL infeasible
+# adicionado por Raphael Saavedra
+function test_PL_Infeasible_Raphael(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL infeasible" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2] >= 0)
+        @constraint(m, x[1] + x[2] <= -1)
+        @objective(m, Max, x[1] + x[2])
+
+        sol = solveMIP(m)
+
+        @test m.ext[:status] == :Infeasible
+    end
+end
+
+# teste Minimal Unit Commitment
+# adicionado por Raphael Saavedra
+function test_Minimal_UC(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+  #------------------------------------------------------------------------------
+  # Parameters
+  T = collect(1:3) # periods
+  N = collect(1:3) # generators
+  p0 = zeros(N[end]) # initial power output
+  v0 = zeros(N[end]) # initial on/off state
+  D = [100; 200; 300] # demand
+  Cf = [100; 100; 100] # fixed cost
+  Cl = [10; 30; 50] # linear cost
+  Pmax = [100; 150; 200] # generator capacity
+  Pmin = [10; 10; 10] # minimum power output
+  RD = [30; 50; 70] # ramp-down limit
+  RU = [30; 50; 70] # ramp-up limit
+  SD = RD # shutdown ramp limit
+  SU = RU # startup ramp limit
+  #------------------------------------------------------------------------------
+  @testset "Teste Minimal Unit Commitment" begin
+
+    m = Model(solver = solver)
+    #----------------------------------------------------------------------------
+    # Variables
+    @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
+    @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
+    #----------------------------------------------------------------------------
+    # Constraints
+    @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
+    @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
+    @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
+    @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
+    @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+    # Constraints regarding initial state
+    @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
+    @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+    #----------------------------------------------------------------------------
+    # Objective function
+    @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T))
+  #------------------------------------------------------------------------------
+    sol = solveMIP(m)
+
+    @test m.ext[:status] == :Optimal
+    @test getobjectivevalue(m) ≈ 17700 atol = 1e-5
+    @test getvalue(p) ≈ [30 60 90 ; 50 100 150 ; 20 40 60] atol = 1e-5
+
+  end
+end
+
+# teste Sudoku 4x4
+# adicionado por Raphael Saavedra
+function testSudoku4x4(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste Sudoku 4x4" begin
+        n = 4
+        m = Model(solver = solver)
+        @variable(m, x[i in 1:n, j in 1:n, k in 1:n], Bin)
+
+        fixas = [(1,1,1), (2,2,3), (1,3,4), (3,3,2), (4,4,4), (4,2,1)]
+        for idx in fixas
+            @constraint(m, x[idx...] == 1)
+        end
+        @constraint(m, [j in 1:n, k in 1:n], sum(x[:,j,k]) == 1)
+        @constraint(m, [i in 1:n, k in 1:n], sum(x[i,:,k]) == 1)
+        @constraint(m, [i in 1:n, j in 1:n], sum(x[i,j,:]) == 1)
+        @constraint(m, [p in [0,2], q in [0,2], k in 1:n], sum(sum(x[i+p,j+q,k] for i in 1:2) for j in 1:2) == 1)
+        @objective(m, Min, 0)
+
+        sol = solveMIP(m)
+
+        M = Matrix(4,4)
+        for i = 1 : 4
+          for j = 1 : 4
+            M[i,j] = find(getvalue(x[i,j,:]).>0)[1]
+          end
+        end
+
+        @test M == [1 2 4 3; 4 3 1 2; 3 4 2 1; 2 1 3 4]
     end
 end
