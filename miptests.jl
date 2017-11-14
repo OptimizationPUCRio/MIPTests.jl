@@ -394,7 +394,7 @@ function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSo
     @testset "Teste caminho mais curto" begin
 
         m = Model(solver = solver)
-        @variable(m, f[i in 1:6, j in 1:6], Bin)
+        @variable(m, x[i in 1:6, j in 1:6], Bin)
 
         A = [0 1 1 0 0 0
              0 0 0 1 0 0
@@ -848,12 +848,12 @@ function testSudoku4x4(solveMIP::Function, solver::MathProgBase.AbstractMathProg
         @test M == [1 2 4 3; 4 3 1 2; 3 4 2 1; 2 1 3 4]
     end
 end
-                                        
-                                        
+
+
 #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Custo fixo" begin
-                
+
         #Custo Unitário
         c = [2; 3; 2; 5; 6]
 
@@ -883,17 +883,17 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
 
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 27
-        @test getvalue(x) == [5 2 3 0 0]                
-end                
-        
+        @test getvalue(x) == [5 2 3 0 0]
+end
+
 #-------------------------------------
 #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Cobertura de pontos" begin
-                     
+
         pontosextra= 0
-        
-        #um ponto não é coberto por nenhum subconjunto        
+
+        #um ponto não é coberto por nenhum subconjunto
 
         S1=[1 0 0 1 ones(1,pontosextra)]
         S2=[1 1 0 0 ones(1,pontosextra)]
@@ -909,14 +909,14 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           constrain[i=1:4+pontosextra], sum(A[i,j]*x[j] for j=1:3)>= 1
           end)
         @objective(m, Min, sum(c[j]*x[j] for j=1:3))
-                        
+
         m.ext[:status] == :Infeasible
 end
 #-------------------------------------
 #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Cobertura de pontos" begin
-              
+
         pontosextra= 50
 
         S1=[1 0 1 1 ones(1,pontosextra)]
@@ -933,16 +933,16 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           constrain[i=1:4+pontosextra], sum(A[i,j]*x[j] for j=1:3)>= 1
           end)
         @objective(m, Min, sum(c[j]*x[j] for j=1:3))
-        
+
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 6
-        @test getvalue(x) == [1 0 1] 
-                                
+        @test getvalue(x) == [1 0 1]
+
 end
-                        
-                        
+
+
 #---------------------
-                        
+
 #adicionado por Rodrigo Villas
 #Produção com custo fixo Inviavel
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -965,17 +965,17 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           end)
 
         @objective(m, Min, sum(j*y[j]+(vari-j)*x[j] for j=1:vari))
-                                        
-         
+
+
         sol = solveMIP(m)
-        m.ext[:status] == :Infeasible  
+        m.ext[:status] == :Infeasible
 end
 #------------------------------------------
-                                
- #adicionado por Rodrigo Villas                               
+
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Custo fixo" begin
- 
+
         vari=500
 
         m= Model(solver = solver)
@@ -1000,10 +1000,10 @@ end
 #-----------------------
 
 #Expansão Unbounded
- #adicionado por Rodrigo Villas                               
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Expansão Unbouded" begin
- 
+
 
         Cinv = 13.16
            M = 200
@@ -1018,47 +1018,47 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
 
                @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
                @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
-        sol = solveMIP(m)                                                
+        sol = solveMIP(m)
         m.ext[:status] == :Infeasible  #Unbounded
-end                           
-                        
+end
+
 #--------------------------
- #adicionado por Rodrigo Villas                       
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "PL da minha cabeça" begin
-                                
-                                
+
+
                 @variable(m, x[i=1:4]>=0)
 
                 @constraint(m, x[1]+x[2]+x[3]<=3)
                 @constraint(m, x[4]+2*x[1]+6*x[3]<=10)
                 @constraint(m, 4*x[3]+x[1]+3*x[2]<=5)
-                                
+
                 @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
                 sol = solveMIP(m)
                     @test getobjectivevalue(m) == 13
                     @test getvalue(x) == [2 1 0 0]
-                                
+
 end
-                            
-                            
-                                                    
+
+
+
 #--------------------------
- #adicionado por Rodrigo Villas                       
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "PL da minha cabeça" begin
-                                
-                                
+
+
                 @variable(m, x[i=1:4]>=0)
 
                 @constraint(m, x[1]+x[2]+x[3]<=3)
                 @constraint(m, x[4]+2*x[1]+6*x[3]<=10)
                 @constraint(m, 4*x[3]+x[1]+3*x[2]<=5)
-                @constraint(m, x[3]==2)                
+                @constraint(m, x[3]==2)
                 @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
-                sol = solveMIP(m)                                                
+                sol = solveMIP(m)
                     m.ext[:status] == :Infeasible
-                                
-end                                        
+
+end
