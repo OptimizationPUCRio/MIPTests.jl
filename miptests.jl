@@ -2,10 +2,6 @@ using Gurobi
 using JuMP
 using MathProgBase
 using Base.Test
-include("function.jl")
-
-sol = GurobiSolver()
-
 
 # teste exemplo
 # adicionado por Joaquim Garcia
@@ -1370,4 +1366,4 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
 sol = solveMIP(m)
 m.ext[:status] == :Infeasible
 
-end      
+end
