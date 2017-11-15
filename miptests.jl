@@ -1166,7 +1166,7 @@ function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
         end
         for i=2:number_of_nodes
             for j=2:number_of_nodes
-              if(i!=j)
+              if (i!=j)
                 @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
               end
             end
@@ -1199,17 +1199,16 @@ function test_PL_Infeasible_Guilherme(solveMIP::Function, solver::MathProgBase.A
     return solution
 end
 
-#teste MIP médio TSP de 20 cidades
+#teste MIP médio TSP de 15 cidades
 #adicionado por Guilherme Bodin
 function test_MIP_medio_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
-    testresult = @testset "Teste MIP médio Guilherme (TSP 30 cidades)" begin
-        number_of_nodes = 30
+    testresult = @testset "Teste MIP médio Guilherme (TSP 15 cidades)" begin
+        number_of_nodes = 15
         srand(12)
-        C = 1000*rand(30,30)
+        C = 1000*rand(15,15)
 
-        m = Model(solver = solver)
         @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
         @variable(m, u[i=:1:number_of_nodes], Int)
         for i=1:number_of_nodes
@@ -1220,7 +1219,7 @@ function test_MIP_medio_Guilherme(solveMIP::Function, solver::MathProgBase.Abstr
         end
         for i=2:number_of_nodes
             for j=2:number_of_nodes
-              if(i!=j)
+              if (i!=j)
                 @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
               end
             end
@@ -1228,7 +1227,7 @@ function test_MIP_medio_Guilherme(solveMIP::Function, solver::MathProgBase.Abstr
         @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
 
         solveMIP(m)
-        @test getobjectivevalue(m) ≈ 1645.8508340848819 atol = 1e-7
+        @test getobjectivevalue(m) ≈ 2007.2884583133053 atol = 1e-7
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1244,7 +1243,6 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
         srand(12)
         A = 1000*rand(100,100)
 
-        m = Model(solver = solver)
         @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
         @variable(m, u[i=:1:number_of_nodes], Int)
         for i=1:number_of_nodes
@@ -1255,7 +1253,7 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
         end
         for i=2:number_of_nodes
             for j=2:number_of_nodes
-              if(i!=j)
+              if (i!=j)
                 @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
               end
             end
