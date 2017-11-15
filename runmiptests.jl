@@ -58,6 +58,8 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
                 push!(table, line)
             end
         end
+        mat = table2mat(table)
+        writecsv("result.out",mat)
     end
 
     return table
