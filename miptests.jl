@@ -848,12 +848,12 @@ function testSudoku4x4(solveMIP::Function, solver::MathProgBase.AbstractMathProg
         @test M == [1 2 4 3; 4 3 1 2; 3 4 2 1; 2 1 3 4]
     end
 end
-                                        
-                                        
+
+
 #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Custo fixo" begin
-                
+
         #Custo Unitário
         c = [2; 3; 2; 5; 6]
 
@@ -883,17 +883,17 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
 
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 27
-        @test getvalue(x) == [5 2 3 0 0]                
-end                
-        
+        @test getvalue(x) == [5 2 3 0 0]
+end
+
 #-------------------------------------
 #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Cobertura de pontos" begin
-                     
+
         pontosextra= 0
-        
-        #um ponto não é coberto por nenhum subconjunto        
+
+        #um ponto não é coberto por nenhum subconjunto
 
         S1=[1 0 0 1 ones(1,pontosextra)]
         S2=[1 1 0 0 ones(1,pontosextra)]
@@ -909,14 +909,14 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           constrain[i=1:4+pontosextra], sum(A[i,j]*x[j] for j=1:3)>= 1
           end)
         @objective(m, Min, sum(c[j]*x[j] for j=1:3))
-                        
+
         m.ext[:status] == :Infeasible
 end
 #-------------------------------------
 #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Cobertura de pontos" begin
-              
+
         pontosextra= 50
 
         S1=[1 0 1 1 ones(1,pontosextra)]
@@ -933,16 +933,16 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           constrain[i=1:4+pontosextra], sum(A[i,j]*x[j] for j=1:3)>= 1
           end)
         @objective(m, Min, sum(c[j]*x[j] for j=1:3))
-        
+
         sol = solveMIP(m)
         @test getobjectivevalue(m) == 6
-        @test getvalue(x) == [1 0 1] 
-                                
+        @test getvalue(x) == [1 0 1]
+
 end
-                        
-                        
+
+
 #---------------------
-                        
+
 #adicionado por Rodrigo Villas
 #Produção com custo fixo Inviavel
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -965,17 +965,17 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           end)
 
         @objective(m, Min, sum(j*y[j]+(vari-j)*x[j] for j=1:vari))
-                                        
-         
+
+
         sol = solveMIP(m)
-        m.ext[:status] == :Infeasible  
+        m.ext[:status] == :Infeasible
 end
 #------------------------------------------
-                                
- #adicionado por Rodrigo Villas                               
+
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Custo fixo" begin
- 
+
         vari=500
 
         m= Model(solver = solver)
@@ -1000,10 +1000,10 @@ end
 #-----------------------
 
 #Expansão Unbounded
- #adicionado por Rodrigo Villas                               
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "Expansão Unbouded" begin
- 
+
 
         Cinv = 13.16
            M = 200
@@ -1018,47 +1018,189 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
 
                @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
                @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
-        sol = solveMIP(m)                                                
+        sol = solveMIP(m)
         m.ext[:status] == :Infeasible  #Unbounded
-end                           
-                        
+end
+
 #--------------------------
- #adicionado por Rodrigo Villas                       
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "PL da minha cabeça" begin
-                                
-                                
+
+
                 @variable(m, x[i=1:4]>=0)
 
                 @constraint(m, x[1]+x[2]+x[3]<=3)
                 @constraint(m, x[4]+2*x[1]+6*x[3]<=10)
                 @constraint(m, 4*x[3]+x[1]+3*x[2]<=5)
-                                
+
                 @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
                 sol = solveMIP(m)
                     @test getobjectivevalue(m) == 13
                     @test getvalue(x) == [2 1 0 0]
-                                
+
 end
-                            
-                            
-                                                    
+
+
+
 #--------------------------
- #adicionado por Rodrigo Villas                       
+ #adicionado por Rodrigo Villas
 function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     @testset "PL da minha cabeça" begin
-                                
-                                
+
+
                 @variable(m, x[i=1:4]>=0)
 
                 @constraint(m, x[1]+x[2]+x[3]<=3)
                 @constraint(m, x[4]+2*x[1]+6*x[3]<=10)
                 @constraint(m, 4*x[3]+x[1]+3*x[2]<=5)
-                @constraint(m, x[3]==2)                
+                @constraint(m, x[3]==2)
                 @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
-                sol = solveMIP(m)                                                
+                sol = solveMIP(m)
                     m.ext[:status] == :Infeasible
-                                
-end                                        
+
+end
+
+
+#teste P1 TSP de 7 cidades
+#adicionado por Guilherme Bodin
+function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste da P1 Guilherme (TSP 7 cidades)" begin
+        number_of_nodes = 7
+
+        C = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
+             135.484    0.0     105.546   174.003   142.425    53.0094  105.991
+             142.801  105.546     0.0      87.6641   59.0      63.8905   73.5527
+             131.0    174.003    87.6641    0.0      31.9061  146.932   159.201
+             117.154  142.425    59.0      31.9061    0.0     115.521   132.306
+             153.473   53.0094   63.8905  146.932   115.521     0.0      55.4617
+             201.022  105.991    73.5527  159.201   132.306    55.4617    0.0   ]
+
+        ans = [0.0   0.0   0.0   1.0   0.0   0.0   0.0
+               1.0   0.0   0.0   0.0   0.0   0.0   0.0
+               0.0   0.0   0.0   0.0   0.0   0.0   1.0
+               0.0   0.0   0.0   0.0   1.0   0.0   0.0
+               0.0   0.0   1.0   0.0   0.0   0.0   0.0
+               0.0   1.0   0.0   0.0   0.0   0.0   0.0
+               0.0   0.0   0.0   0.0   0.0   1.0   0.0]
+
+        m = Model(solver = solver)
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=:1:number_of_nodes], Int)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            for j=2:number_of_nodes
+              if(i!=j)
+                @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
+              end
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) == 539.4139
+        @test getvalue(X) == ans || getvalue(X) == ans'
+    end
+end
+
+#teste PL Infeasible
+#adicionado por Guilherme Bodin
+function test_PL_Infeasible_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL Infeasible Guilherme" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2])
+        @constraint(m, x[1] == 6)
+        @constraint(m, x[2] == 6)
+        @constraint(m, x[1] + x[2] <=11)
+        @objective(m, Min, x[1]+x[2])
+
+        sol = solveMIP(m)
+        @test m.ext[:status] == :Infeasible
+    end
+end
+
+#teste MIP médio TSP de 20 cidades
+#adicionado por Guilherme Bodin
+function test_MIP_médio_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste MIP médio Guilherme (TSP 30 cidades)" begin
+        number_of_nodes = 30
+        srand(12)
+        C = 1000*rand(30,30)
+
+        m = Model(solver = solver)
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=:1:number_of_nodes], Int)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            for j=2:number_of_nodes
+              if(i!=j)
+                @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
+              end
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1645.8508340848819 atol = 1e-7
+    end
+end
+
+#teste MIP grande TSP de 90 cidades
+#adicionado por Guilherme Bodin
+function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste MIP Grande Guilherme (TSP 90 cidades)" begin
+        number_of_nodes = 90
+        srand(12)
+        C = 1000*rand(90,90)
+
+        m = Model(solver = solver)
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=:1:number_of_nodes], Int)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            for j=2:number_of_nodes
+              if(i!=j)
+                @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
+              end
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1719.0907079898968 atol = 1e-7
+    end
+end
+
+#teste PL
+#adicionado por Guilherme Bodin
+function test_PL_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    @testset "Teste PL Guilherme" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2] >= 0)
+        @constraint(m, x[1] + 2*x[2] <= 6)
+        @constraint(m, 4*x[1] + 3*x[2] <= 6)
+        @objective(m, Max, 40*x[1]+50x[2])
+
+        sol = solveMIP(m)
+
+        @test m.objVal == 100
+        @test m.colVal == [0; 2]
+    end
+end
