@@ -209,13 +209,6 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
 
         @objective(m, Min, sum(sum(c[i,j]*y[i,j] for i = 1:tam) for j = 1:tam))
 
-         resp_x = [ 0.0  0.0       1.72233  0.579707  0.0      0.0
-         0.0  0.0       0.0      0.0       0.0      0.0
-         0.0  0.0       0.0      0.0       1.42254  0.0
-         0.0  0.0       0.0      0.0       0.0      0.567123
-         0.0  0.874746  0.0      0.0       0.0      0.0
-         0.0  0.0       0.0      0.0       0.0      0.0]
-
          resp_y = [0.0  -0.0   1.0   1.0  -0.0   0.0
         1.0   0.0  -0.0  -0.0  -0.0  -0.0
         -0.0  -0.0   0.0   0.0   1.0  -0.0
@@ -225,7 +218,6 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.69179355 atol=exp10(-5)
-        @test getvalue(x) ≈ resp_x atol=1e-3
         @test getvalue(y) ≈ resp_y atol=1e-3
 
     end
