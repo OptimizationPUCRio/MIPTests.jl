@@ -897,7 +897,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
         @variable(myModel, bin_buy[1:numA] , Bin)
         @variable(myModel, bin_sell[1:numA] , Bin)
         #expansao binaria
-        numexp = 8
+        numexp = 5
         @variable(myModel, expbin_buy[1:numA,1:numexp] , Bin)
         @variable(myModel, expbin_sell[1:numA,1:numexp] , Bin)
         @constraints(myModel, begin
