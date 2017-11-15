@@ -10,7 +10,7 @@ In order to test a MIP solver in this testbench use the function:
 
 `runtests(solvemethod, solver)`
 
-Where `solver` is a typical JuMP solver like: `GurobiSolver(OutpufFlag = 0)`, `Xpress.XpressSolver()`, `CplexSolver(CPX_PARAM_SCRIND = 0)`...
+Where `solver` is a typical JuMP solver like: `GurobiSolver(OutputFlag = 0)`, `Xpress.XpressSolver()`, `CplexSolver(CPX_PARAM_SCRIND = 0)`...
 
 And `solvemethod` is a julia solve functions. To use JuMP's solver default use: `jumpsolve` defined in this script
 
