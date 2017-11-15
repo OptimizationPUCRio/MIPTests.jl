@@ -291,7 +291,7 @@ function test_PL_Unbounded_Brito(solveMIP::Function, solver::MathProgBase.Abstra
         @objective(m, :Max, 4x[1] + 3x[2])
 
         solveMIP(m)
-        @test m.ext[:status] == :Unbounded
+        @test m.ext[:status] in [:Unbounded, :InfeasibleOrUnbounded]
 
     end
     setoutputs!(m,solution,testresult)
@@ -433,7 +433,7 @@ function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathPro
         #------------------------------------------------------------------------------
         solveMIP(m)
 
-        @test getobjectivevalue(m) ≈ 289892.9539 atol=1e-3
+        @test getobjectivevalue(m) ≈ 289892.9539 rtol=1e-3
         @test getvalue(p[:,24]) ≈ [400; zeros(9)]
         @test getvalue(v[1,:]) ≈ ones(24)
         @test getvalue(v[:,1]) ≈ [1; zeros(9)]
@@ -714,7 +714,7 @@ function teste_PL_andrew_unbounded(solveMIP::Function, solver::MathProgBase.Abst
 
         solveMIP(m)
 
-        @test m.ext[:status] == :Unbounded
+        @test m.ext[:status] in [:Unbounded, :InfeasibleOrUnbounded]
 
     end
     setoutputs!(m,solution,testresult)
