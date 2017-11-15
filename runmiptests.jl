@@ -23,6 +23,7 @@ testset = [
     (testSudoku4x4, "RS", "MPI-p"),
     
     (testCaminho, "CG", "MIP-p"),
+    (test_optimal_dispatch, "CG", "MIP-g"),
     
     (test3, "AR", "MIP-p"),
     (test3_2, "AR", "MIP-unb"),
@@ -53,6 +54,7 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
         for teste in testset
             if (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
                 line = teste[1](solveMIP, solver)
+                line.name = "$(teste[1]) - $(teste[2])"
                 push!(table, line)
             end
         end
@@ -62,9 +64,9 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
 end
 
 function table2mat(table)
-    out = Any["Pass" "Objective" "BestBound" "Time" "Nodes" "IntSols" "Status"]
+    out = Any["Name" "Pass" "Objective" "BestBound" "Time" "Nodes" "IntSols" "Status"]
     for line in table
-        out = vcat(out, Any[line.pass line.objective line.bestbound line.time line.nodes line.intsols line.status])
+        out = vcat(out, Any[line.name line.pass line.objective line.bestbound line.time line.nodes line.intsols line.status])
     end
     return out
 end

@@ -3,6 +3,7 @@ using MathProgBase
 using Base.Test
 
 type MIPSolution
+    name::String
     pass::Bool
     objective::Float64
     bestbound::Float64
@@ -11,7 +12,7 @@ type MIPSolution
     intsols::Int
     status::Symbol
     function MIPSolution()
-        new(false,NaN,NaN,Inf,-1,-1,:unsolved)
+        new("",false,NaN,NaN,Inf,-1,-1,:unsolved)
     end
 end
 
@@ -1197,3 +1198,119 @@ function test_rv_8(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolv
     return solution
 end
                                
+function test_optimal_dispatch(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Despacho ótimo" begin
+        # Conjuntos
+
+        T = collect(1:2) # Periodos
+        L =collect(1:2) # conjunto de linhas
+        N = collect(1:2) # conjunto de barras
+        I = collect(1:5) # conjunto de usinas
+        C = collect(1:7) # conjunto de contingencias
+
+        # Constantes
+
+        x = 1 # reatancia
+        c = [10;20;50;200;300] # custo de geração
+        u = [10;15;5;20;25] # custo da reserva de subida
+        d = [10;15;5;1;1] # custo da reserva de descida
+        CU = [100;100;50;10;10] # custo fixo de acoplamento
+        CD = CU # custo fixo de desacoplamento
+        Pmin = [50;40;10;5;1] # Produção minima de cada usinas
+        Pmax = [80;70;60;60;60] # produção maxima de cada usina
+        RU = [5;15;25;50;60] # Rampa de subida
+        RD = [5;15;50;50;60] # Rampa de descida
+        F = [50;50] # capacidade de cada linha
+        K = 1 # criterio de segurança
+
+        # Lei de Kirshoff
+
+        A = [1  1;
+            -1 -1] # Matriz de incidencia
+
+        S = (A*(1/x)*diagm(ones(length(L))))'
+
+        # Balanço de potencia
+
+        B = [1 1 0 0 1;
+            0 0 1 1 0]
+
+        # Demanda
+
+        D = [50;50;50;60;70;80;81;82;83;84;85;80;75;70;80;90;100;100;100;90;80;70;60;50]
+        Db=0.5*(D.*ones(24,2))'
+        # Contingencias
+
+        a = ones(7,7)-diagm(ones(7))
+
+        # Estado inicial do sistema
+
+        p0 = zeros(5)
+        v0 = zeros(5)
+
+        #------------------------------------------------------------------------------
+        # Formulação do modelo
+        #------------------------------------------------------------------------------
+
+        # Variáveis
+
+        @variable(m, p[1:length(I),1:length(T)] >= 0)
+        @variable(m, v[1:length(I),1:length(T)], Bin)
+        @variable(m, f[1:length(L),1:length(T)])
+        @variable(m, θ[1:length(N),1:length(T)])
+        @variable(m, ru[1:length(I),1:length(T)] >= 0)
+        @variable(m, rd[1:length(I),1:length(T)] >= 0)
+        @variable(m, pk[1:length(I),1:length(T),1:7] >= 0)
+        @variable(m, fk[1:length(L),1:length(T),1:7])
+        @variable(m, θk[1:length(N),1:length(T),1:7])
+        @variable(m, 0 <= vu[1:length(I),1:length(T)] <= 1)
+        @variable(m, 0 <= vd[1:length(I),1:length(T)] <= 1)
+
+        # Função objetivo
+
+        @objective(m, Min,sum(c[i]*p[i,t]+CU[i]*vu[i,t]+CD[i]*vd[i,t]+u[i]*ru[i,t]+d[i]*rd[i,t] for i in I, t in T))
+
+        # Restições
+
+        @constraint(m, [i in I,t in 2:T[end]], vu[i,t] - vd[i,t] == v[i,t] - v[i,t-1])
+        @constraint(m, [i in I,t in T], vu[i,t] <= v[i,t])
+        @constraint(m, [i in I,t in T], vd[i,t] <= 1- v[i,t])
+        @constraint(m, [i in I,t in T], Pmin[i]*v[i,t] <= p[i,t])
+        @constraint(m, [i in I,t in T], p[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [i in I, t in T[2:end]], p[i,t] - p[i,t-1] <= RU[i]*v[i,t-1] + Pmax[i]*vu[i,t])
+        @constraint(m, [i in I, t in T[2:end]], p[i,t-1] - p[i,t] <= RD[i]*v[i,t] + Pmax[i]*vd[i,t])
+        @constraint(m, pre[b in N,t in T], sum(A[b,l]*f[l,t] for l in L) + sum(B[b,i]*p[i,t] for i in I) == Db[b,t])
+        @constraint(m, [l in L,t in T], f[l,t] == sum(S[l,b]*θ[b,t] for b in N))
+        @constraint(m, [l in L,t in T], -F[l] <= f[l,t])
+        @constraint(m, [l in L,t in T], f[l,t] <= F[l])
+        @constraint(m, [i in I,t in T], p[i,t] + ru[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [i in I,t in T], p[i,t] - rd[i,t] >= Pmin[i]*v[i,t])
+        @constraint(m, [i in I,t in T], ru[i,t] <= 0.9*RU[i])
+        @constraint(m, [i in I,t in T], rd[i,t] <= 0.9*RD[i])
+
+
+        if K!=0
+            @constraint(m, pos[b in N,t in T,k in C], sum(A[b,l]*fk[l,t,k] for l in L) + sum(B[b,i]*pk[i,t,k] for i in I) == Db[b,t])
+            @constraint(m, [l in L,t in T,k in C], fk[l,t,k] == a[k,l+5]*sum(S[l,b]*θk[b,t,k] for b in N))
+            @constraint(m, [l in L,t in T,k in C], -F[l]*a[k,l+5] <= fk[l,t,k])
+            @constraint(m, [l in L,t in T,k in C], fk[l,t,k] <= F[l]*a[k,l+5])
+            @constraint(m, [i in I,t in T,k in C], a[k,i]*(p[i,t]-rd[i,t]) <= pk[i,t,k])
+            @constraint(m, [i in I,t in T,k in C], pk[i,t,k] <= a[k,i]*(p[i,t]+ru[i,t]))
+        end
+
+
+        @constraint(m, [i in I,t in 1], vu[i,t] - vd[i,t] == v[i,t] - v0[i])
+        @constraint(m, [i in I, t in 1], p[i,t] - p0[i] <= RU[i]*v0[i] + Pmax[i]*vu[i,t])
+        @constraint(m, [i in I, t in 1], p0[i] - p[i,t] <= RD[i]*v[i,t] + Pmax[i]*vd[i,t])
+        sol = solveMIP(m)
+
+        @test getobjectivevalue(m) == 5150.0
+        @test sum(getvalue(p[2,:])) == 98.0
+        @test sum(getvalue(v[1,:])) == 0.00
+        @test sum(getvalue(v)) == 4.00
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
