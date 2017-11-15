@@ -4,7 +4,7 @@ A collection of MIP instances
 
 ## Usage
 
-The main script is ~runmiptests.jl~
+The main script is **runmiptests.jl**
 
 In order to test a MIP solver in this testbench use the function:
 
@@ -17,6 +17,7 @@ And `solvemethod` is a julia solve functions. To use JuMP's solver default use: 
 ## Example:
 
 ```
+include("runmiptests.jl")
 using Gurobi
 runtests(jumpsolve, GurobiSolver(OutputFlag = 0))
 ```
