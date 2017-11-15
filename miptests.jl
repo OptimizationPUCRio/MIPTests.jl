@@ -1190,10 +1190,11 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
   for i = 2:numA
     r_bar_t[i] = mean(returns[:,i])
   end
-
+  
   #######################################################
-    @testset "Alocacao de portifolio Viavel" begin
-        myModel = Model(solver = solver)
+  myModel = Model(solver = solver)                                          
+  testresult = @testset "Alocacao de portifolio Viavel" begin
+        
         # Decision variables
         @variable(myModel, X[1:numA]>=0)
         @variable(myModel, u_buy[1:numA]>=0 )  #Int
@@ -1266,7 +1267,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
         @test U_buy ≈ getValue(u_buy) atol=1E-07
         @test U_sell ≈ getValue(u_sell) atol=1E-07      
     end
-    setoutputs!(m,solution,testresult)
+    setoutputs!(myModel,solution,testresult)
     return solution
 end
 
