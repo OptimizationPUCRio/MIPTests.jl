@@ -1134,7 +1134,9 @@ end
 #teste P1 TSP de 7 cidades
 #adicionado por Guilherme Bodin
 function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    @testset "Teste da P1 Guilherme (TSP 7 cidades)" begin
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste da P1 Guilherme (TSP 7 cidades)" begin
         number_of_nodes = 7
 
         C = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
@@ -1153,7 +1155,7 @@ function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
                0.0   1.0   0.0   0.0   0.0   0.0   0.0
                0.0   0.0   0.0   0.0   0.0   1.0   0.0]
 
-        m = Model(solver = solver)
+
         @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
         @variable(m, u[i=:1:number_of_nodes], Int)
         for i=1:number_of_nodes
@@ -1171,16 +1173,18 @@ function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
         end
         @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
 
-        sol = solveMIP(m)
+        solveMIP(m)
         @test getobjectivevalue(m) == 539.4139
         @test getvalue(X) == ans || getvalue(X) == ans'
     end
+    setoutputs!(m,solution,testresult)
+    return solution
 end
 
-#teste PL Infeasible
-#adicionado por Guilherme Bodin
 function test_PL_Infeasible_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    @testset "Teste PL Infeasible Guilherme" begin
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste PL Infeasible Guilherme" begin
         m = Model(solver = solver)
         @variable(m, x[i=1:2])
         @constraint(m, x[1] == 6)
@@ -1188,15 +1192,19 @@ function test_PL_Infeasible_Guilherme(solveMIP::Function, solver::MathProgBase.A
         @constraint(m, x[1] + x[2] <=11)
         @objective(m, Min, x[1]+x[2])
 
-        sol = solveMIP(m)
+        solveMIP(m)
         @test m.ext[:status] == :Infeasible
     end
+    setoutputs!(m,solution,testresult)
+    return solution
 end
 
 #teste MIP médio TSP de 20 cidades
 #adicionado por Guilherme Bodin
 function test_MIP_médio_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    @testset "Teste MIP médio Guilherme (TSP 30 cidades)" begin
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP médio Guilherme (TSP 30 cidades)" begin
         number_of_nodes = 30
         srand(12)
         C = 1000*rand(30,30)
@@ -1219,18 +1227,22 @@ function test_MIP_médio_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
         end
         @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
 
-        sol = solveMIP(m)
+        solveMIP(m)
         @test getobjectivevalue(m) ≈ 1645.8508340848819 atol = 1e-7
     end
+    setoutputs!(m,solution,testresult)
+    return solution
 end
 
-#teste MIP grande TSP de 90 cidades
+#teste MIP grande TSP de 100 cidades
 #adicionado por Guilherme Bodin
 function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    @testset "Teste MIP Grande Guilherme (TSP 90 cidades)" begin
-        number_of_nodes = 90
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Grande Guilherme (TSP 100 cidades)" begin
+        number_of_nodes = 100
         srand(12)
-        C = 1000*rand(90,90)
+        A = 1000*rand(100,100)
 
         m = Model(solver = solver)
         @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
@@ -1250,26 +1262,11 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
         end
         @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
 
-        sol = solveMIP(m)
-        @test getobjectivevalue(m) ≈ 1719.0907079898968 atol = 1e-7
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1720.190204078063 atol = 1e-7
     end
-end
-
-#teste PL
-#adicionado por Guilherme Bodin
-function test_PL_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    @testset "Teste PL Guilherme" begin
-        m = Model(solver = solver)
-        @variable(m, x[i=1:2] >= 0)
-        @constraint(m, x[1] + 2*x[2] <= 6)
-        @constraint(m, 4*x[1] + 3*x[2] <= 6)
-        @objective(m, Max, 40*x[1]+50x[2])
-
-        sol = solveMIP(m)
-
-        @test m.objVal == 100
-        @test m.colVal == [0; 2]
-    end
+    setoutputs!(m,solution,testresult)
+    return solution
 end
 
 function test_rv_6(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
