@@ -3,26 +3,37 @@ using MathProgBase
 using Base.Test
 
 type MIPSolution
-  objective::Float64
-  bestbound::Float64
-  time::Float64
-  nodes::Int
-  intsols::Int
-  status::Symbol
-  function MIPSolution()
-    new(NaN,NaN,Inf,-1,-1,:unsolved)
-  end
+    objective::Float64
+    bestbound::Float64
+    time::Float64
+    nodes::Int
+    intsols::Int
+    status::Symbol
+    function MIPSolution()
+        new(NaN,NaN,Inf,-1,-1,:unsolved)
+    end
 end
 
 function setoutputs!(m,sol::MIPSolution)
-  sol.objective = getobjectivevalue(m)
-  #sol.bestbound = bestbound(m)
-  sol.time = m.ext[:time]
-  sol.nodes = m.ext[:nodes]
-  sol.intsols = m.ext[:intsols]
-  sol.status = m.ext[:status]
-  return nothing
+    sol.objective = getobjectivevalue(m)
+    #sol.bestbound = bestbound(m)
+    if haskey(m.ext,:time)
+        sol.time = m.ext[:time]
+    end
+    if haskey(m.ext,:nodes)
+        sol.nodes = m.ext[:nodes]
+    end
+    if haskey(m.ext,:intsols)
+        sol.intsols = m.ext[:intsols]
+    end
+    if haskey(m.ext,:status)
+        sol.status = m.ext[:status]
+    end
+    return nothing
 end
+  
+ 
+  
 
 #≈
 
@@ -107,20 +118,20 @@ function test3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
     Cinv = 13.16
     M = 200
     @testset "Teste da Expansao da Producao" begin
-        model = Model(solver = solver)
-        @variable(model, x[i=1:2]>=0)
-        @variable(model, u, Bin)
-        @objective(model, Max, 4*x[1] + 3*x[2] - u*Cinv)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2]>=0)
+        @variable(m, u, Bin)
+        @objective(m, Max, 4*x[1] + 3*x[2] - u*Cinv)
 
-        @constraint(model, 2*x[1] + 1*x[2] <= 4 +u*M)
-        @constraint(model, 1*x[1] + 2*x[2] <= 4 +u*M)
+        @constraint(m, 2*x[1] + 1*x[2] <= 4 +u*M)
+        @constraint(m, 1*x[1] + 2*x[2] <= 4 +u*M)
 
-        @constraint(model, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
-        @constraint(model, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
+        @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
+        @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
 
-        sol = solveMIP(model)
+        sol = solveMIP(m)
 
-        @test getobjectivevalue(model) ≈ 9.340000000000002 atol=1E-07
+        @test getobjectivevalue(m) ≈ 9.340000000000002 atol=1E-07
         @test getvalue(x) ≈ [3.75, 2.5] atol=1E-07
         @test getvalue(u) ≈ 1 atol=1E-07
 
@@ -215,8 +226,8 @@ function test_P1_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProg
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.69179355 atol=exp10(-5)
-        @test getvalue(x) == resp_x
-        @test getvalue(y) == resp_y
+        @test getvalue(x) ≈ resp_x atol=1e-3
+        @test getvalue(y) ≈ resp_y atol=1e-3
 
         setoutputs!(m,solution)
     end
@@ -308,8 +319,8 @@ function test_MIP_Minimal_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
         @objective(m, :Max, 5y[1] + 4y[2] + 3y[3] + 2y[4] + 1y[5])
 
         solveMIP(m)
-        @test getobjectivevalue(m) == 140
-        @test getvalue(x) == [1;1;1;1;0]
+        @test getobjectivevalue(m) ≈ 140 atol=1e-4
+        @test getvalue(x) ≈ [1;1;1;1;0]
         @test getvalue(y) ≈ [10;10;10;10;0] atol = exp10(-5)
 
         setoutputs!(m,solution)
@@ -320,119 +331,119 @@ end
 # teste MIP Pequeno (~50 binarias) ~ The Assignment problem:
 # adicionado por Eduardo Brito
 function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-  solution = MIPSolution()
-  @testset "Teste MIP Pequeno, Assignment problem" begin
-    n  = 8
-    if true
-        c = [0.445321 0.499462 0.409753 0.471825 0.1172 0.820595 0.629809 0.333445; 0.197025 0.160481 0.00865311 0.355901 0.137367 0.199186 0.718575 0.716486;
-         0.654497 0.904598 0.321483 0.171736 0.050554 0.254487 0.540093 0.724331; 0.254369 0.593379 0.205166 0.288702 0.499699 0.308233 0.869406 0.353904;
-         0.854515 0.00978121 0.520072 0.985762 0.72076 0.317384 0.268573 0.315585; 0.0212753 0.754076 0.753672 0.158407 0.212617 0.403343 0.71157 0.17261;
-         0.651835 0.24596 0.700141 0.989018 0.723494 0.236829 0.891181 0.568245; 0.257637 0.883802 0.0252095 0.0273074 0.450492 0.560833 0.820861 0.893546]
+    solution = MIPSolution()
+    @testset "Teste MIP Pequeno, Assignment problem" begin
+        n  = 8
+        if true
+            c = [0.445321 0.499462 0.409753 0.471825 0.1172 0.820595 0.629809 0.333445; 0.197025 0.160481 0.00865311 0.355901 0.137367 0.199186 0.718575 0.716486;
+            0.654497 0.904598 0.321483 0.171736 0.050554 0.254487 0.540093 0.724331; 0.254369 0.593379 0.205166 0.288702 0.499699 0.308233 0.869406 0.353904;
+            0.854515 0.00978121 0.520072 0.985762 0.72076 0.317384 0.268573 0.315585; 0.0212753 0.754076 0.753672 0.158407 0.212617 0.403343 0.71157 0.17261;
+            0.651835 0.24596 0.700141 0.989018 0.723494 0.236829 0.891181 0.568245; 0.257637 0.883802 0.0252095 0.0273074 0.450492 0.560833 0.820861 0.893546]
+        end
+        m = Model(solver = solver)
+        @variable(m, x[i=1:n,j=1:n] >=0, Bin)
+        @objective(m, :Min, sum(c[i,j]*x[i,j] for i = 1:n, j = 1:n))
+        @constraints(m,begin
+        linhas[i=1:n], sum(x[i,j] for j = 1:n) == 1
+        colunas[j=1:n], sum(x[i,j] for i = 1:n) == 1
+        end)
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1.264 atol = exp10(-5)
+        @test abs.(getvalue(x)) ≈ abs.([0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
+                                        0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0;
+                                        0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0;
+                                        0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0;
+                                        0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
+                                        1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                                        0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0;
+                                        0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0])
+
+        @test m.ext[:status] == :Optimal
+
+        setoutputs!(m,solution)
     end
-    m = Model(solver = solver)
-    @variable(m, x[i=1:n,j=1:n] >=0, Bin)
-    @objective(m, :Min, sum(c[i,j]*x[i,j] for i = 1:n, j = 1:n))
-    @constraints(m,begin
-    linhas[i=1:n], sum(x[i,j] for j = 1:n) == 1
-    colunas[j=1:n], sum(x[i,j] for i = 1:n) == 1
-    end)
-
-    solveMIP(m)
-    @test getobjectivevalue(m) ≈ 1.264 atol = exp10(-5)
-    @test abs.(getvalue(x)) == abs.([0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0;
-                                    0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0;
-                                    0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0;
-                                    0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0;
-                                    0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0;
-                                    1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0;
-                                    0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0;
-                                    0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0])
-
-    @test m.ext[:status] == :Optimal
-
-    setoutputs!(m,solution)
-  end
-  return solution
+    return solution
 end
 
 # teste n-K robusto - trabalho da P1 - caso com 10 geradores e K = 2
 # adicionado por Raphael Saavedra
 function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-  solution = MIPSolution()
-  #------------------------------------------------------------------------------
-  # Parameters
-  T = collect(1:24) # periods
-  N = collect(1:10) # generators
-  p0 = zeros(10) # initial power output
-  v0 = zeros(10) # initial on/off state
-  D = 0.5*[700; 750; 850; 950; 1000; 1100; 1150; 1200; 1300; 1400; 1450; 1500; 1400;
-            1300; 1200; 1050; 1000; 1100; 1200; 1400; 1300; 1100; 900; 800] # demand
-  K = 2 # n-K security criterion
-  Cf = [1000; 970; 700; 680; 450; 370; 480; 660; 665; 670] # fixed cost
-  Cl = [16.19; 17.26; 16.6; 16.5; 19.7; 22.26; 27.74; 25.92; 27.27; 27.79] # linear cost
-  Cs = 0.08*Cl # spinning reserve cost
-  Cns = 0.1*Cl # non-spinning reserve cost
-  Pmax = [455; 455; 130; 130; 162; 80; 85; 55; 55; 55] # generator capacity
-  Pmin = [150; 150; 20; 20; 25; 20; 25; 10; 10; 10] # minimum power output
-  RSmax = Pmax # maximum spinning reserve
-  RNSmax = Pmax # maximum non-spinning reserve
-  RD = Pmax # ramp-down limit
-  RU = Pmax # ramp-up limit
-  SD = RD # shutdown ramp limit
-  SU = RU # startup ramp limit
-  #------------------------------------------------------------------------------
-  @testset "Teste Robust n-K Unit Commitment" begin
-    # Model formulation
-    m = Model(solver = solver)
-    #----------------------------------------------------------------------------
-    # Variables
-    @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
-    @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
-    @variable(m, 0 <= rs[i = 1:N[end], 1:T[end]] <= RSmax[i]) # spinning reserve
-    @variable(m, rns[1:N[end], 1:T[end]] >= 0) # non-spinning reserve
-    @variable(m, vns[1:N[end], 1:T[end]], Bin) # 1 if generator provides non-spinning reserve, 0 otherwise
-    @variable(m, y[1:T[end]] >= 0) # dual variable of the n-K constraint
-    @variable(m, z[1:N[end], 1:T[end]] >= 0) # dual variable of the upper bound
-    #----------------------------------------------------------------------------
-    # Constraints
-    @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
-    @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
-    @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
-    @constraint(m, [t in T, i in N], p[i,t] + rs[i,t] <= Pmax[i]*v[i,t])
-    @constraint(m, [t in T, i in N], rns[i,t] >= Pmin[i]*vns[i,t])
-    @constraint(m, [t in T, i in N], rns[i,t] <= RNSmax[i]*vns[i,t])
-    @constraint(m, [t in T, i in N], v[i,t] + vns[i,t] <= 1)
-    @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
-    @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
-    @constraint(m, [t in 2:T[end], i in N], p[i,t] + rs[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
-    @constraint(m, [t in 2:T[end], i in N], rns[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + RNSmax[i]*(1-v[i,t-1]))
-    @constraint(m, [t in 2:T[end], i in N], rns[i,t] <= SU[i]*(vns[i,t]-v[i,t-1]) + RNSmax[i]*(1-(vns[i,t]-v[i,t-1])))
-    @constraint(m, [t in T], (N[end]-K)*y[t] - sum(z[i,t] for i in N) >= D[t])
-    @constraint(m, [t in T, i in N], y[t] - z[i,t] <= p[i,t] + rs[i,t] + rns[i,t])
+    solution = MIPSolution()
+    #------------------------------------------------------------------------------
+    # Parameters
+    T = collect(1:24) # periods
+    N = collect(1:10) # generators
+    p0 = zeros(10) # initial power output
+    v0 = zeros(10) # initial on/off state
+    D = 0.5*[700; 750; 850; 950; 1000; 1100; 1150; 1200; 1300; 1400; 1450; 1500; 1400;
+                1300; 1200; 1050; 1000; 1100; 1200; 1400; 1300; 1100; 900; 800] # demand
+    K = 2 # n-K security criterion
+    Cf = [1000; 970; 700; 680; 450; 370; 480; 660; 665; 670] # fixed cost
+    Cl = [16.19; 17.26; 16.6; 16.5; 19.7; 22.26; 27.74; 25.92; 27.27; 27.79] # linear cost
+    Cs = 0.08*Cl # spinning reserve cost
+    Cns = 0.1*Cl # non-spinning reserve cost
+    Pmax = [455; 455; 130; 130; 162; 80; 85; 55; 55; 55] # generator capacity
+    Pmin = [150; 150; 20; 20; 25; 20; 25; 10; 10; 10] # minimum power output
+    RSmax = Pmax # maximum spinning reserve
+    RNSmax = Pmax # maximum non-spinning reserve
+    RD = Pmax # ramp-down limit
+    RU = Pmax # ramp-up limit
+    SD = RD # shutdown ramp limit
+    SU = RU # startup ramp limit
+    #------------------------------------------------------------------------------
+    @testset "Teste Robust n-K Unit Commitment" begin
+        # Model formulation
+        m = Model(solver = solver)
+        #----------------------------------------------------------------------------
+        # Variables
+        @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
+        @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
+        @variable(m, 0 <= rs[i = 1:N[end], 1:T[end]] <= RSmax[i]) # spinning reserve
+        @variable(m, rns[1:N[end], 1:T[end]] >= 0) # non-spinning reserve
+        @variable(m, vns[1:N[end], 1:T[end]], Bin) # 1 if generator provides non-spinning reserve, 0 otherwise
+        @variable(m, y[1:T[end]] >= 0) # dual variable of the n-K constraint
+        @variable(m, z[1:N[end], 1:T[end]] >= 0) # dual variable of the upper bound
+        #----------------------------------------------------------------------------
+        # Constraints
+        @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
+        @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
+        @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [t in T, i in N], p[i,t] + rs[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [t in T, i in N], rns[i,t] >= Pmin[i]*vns[i,t])
+        @constraint(m, [t in T, i in N], rns[i,t] <= RNSmax[i]*vns[i,t])
+        @constraint(m, [t in T, i in N], v[i,t] + vns[i,t] <= 1)
+        @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
+        @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 2:T[end], i in N], p[i,t] + rs[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 2:T[end], i in N], rns[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + RNSmax[i]*(1-v[i,t-1]))
+        @constraint(m, [t in 2:T[end], i in N], rns[i,t] <= SU[i]*(vns[i,t]-v[i,t-1]) + RNSmax[i]*(1-(vns[i,t]-v[i,t-1])))
+        @constraint(m, [t in T], (N[end]-K)*y[t] - sum(z[i,t] for i in N) >= D[t])
+        @constraint(m, [t in T, i in N], y[t] - z[i,t] <= p[i,t] + rs[i,t] + rns[i,t])
 
-    # Constraints regarding initial state
-    @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
-    @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
-    @constraint(m, [t in 1, i in N], p[i,t] + rs[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
-    @constraint(m, [t in 1, i in N], rns[i,t] <= p0[i] + RU[i]*v0[i] + RNSmax[i]*(1-v0[i]))
-    @constraint(m, [t in 1, i in N], rns[i,t] <= SU[i]*(vns[i,t]-v0[i]) + RNSmax[i]*(1-(vns[i,t]-v0[i])))
-    #----------------------------------------------------------------------------
-    # Objective function
-    @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T) +
-                            sum(Cs[i]*rs[i,t] for i in N, t in T) + sum(Cns[i]*rns[i,t] for i in N, t in T))
-   #------------------------------------------------------------------------------
-    solveMIP(m)
+        # Constraints regarding initial state
+        @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
+        @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 1, i in N], p[i,t] + rs[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 1, i in N], rns[i,t] <= p0[i] + RU[i]*v0[i] + RNSmax[i]*(1-v0[i]))
+        @constraint(m, [t in 1, i in N], rns[i,t] <= SU[i]*(vns[i,t]-v0[i]) + RNSmax[i]*(1-(vns[i,t]-v0[i])))
+        #----------------------------------------------------------------------------
+        # Objective function
+        @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T) +
+                                sum(Cs[i]*rs[i,t] for i in N, t in T) + sum(Cns[i]*rns[i,t] for i in N, t in T))
+        #------------------------------------------------------------------------------
+        solveMIP(m)
 
-    @test getobjectivevalue(m) ≈ 289892.9539 atol=1e-3
-    @test getvalue(p[:,24]) == [400; zeros(9)]
-    @test getvalue(v[1,:]) == ones(24)
-    @test getvalue(v[:,1]) == [1; zeros(9)]
-    @test getvalue(v[:,4]) == [1; zeros(4); 1; zeros(4)]
-    @test sum(getvalue(v)) == 43
+        @test getobjectivevalue(m) ≈ 289892.9539 atol=1e-3
+        @test getvalue(p[:,24]) ≈ [400; zeros(9)]
+        @test getvalue(v[1,:]) ≈ ones(24)
+        @test getvalue(v[:,1]) ≈ [1; zeros(9)]
+        @test getvalue(v[:,4]) ≈ [1; zeros(4); 1; zeros(4)]
+        @test sum(getvalue(v)) ≈ 43
 
-    setoutputs!(m,solution)
-  end
-  return solution
+        setoutputs!(m,solution)
+    end
+    return solution
 end
 
 # teste Caminho mais curto
@@ -442,7 +453,7 @@ function testCaminho(solveMIP::Function, solver::MathProgBase.AbstractMathProgSo
     @testset "Teste caminho mais curto" begin
 
         m = Model(solver = solver)
-        @variable(m, f[i in 1:6, j in 1:6], Bin)
+        @variable(m, x[i in 1:6, j in 1:6], Bin)
 
         A = [0 1 1 0 0 0
              0 0 0 1 0 0
@@ -483,20 +494,20 @@ function test3_2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver
     Cinv = 13.16
     M = 200
     @testset "Teste da Expansao da Producao Unbounded" begin
-        model = Model(solver = solver)
-        @variable(model, x[i=1:2]>=0)
-        @variable(model, u, Bin)
-        @objective(model, Max, 4*x[1] + 3*x[2] - u*Cinv)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2]>=0)
+        @variable(m, u, Bin)
+        @objective(m, Max, 4*x[1] + 3*x[2] - u*Cinv)
 
-        @constraint(model, 2*x[1] + 1*x[2] >= 4 +u*M)
-        @constraint(model, 1*x[1] + 2*x[2] >= 4 +u*M)
+        @constraint(m, 2*x[1] + 1*x[2] >= 4 +u*M)
+        @constraint(m, 1*x[1] + 2*x[2] >= 4 +u*M)
 
-        @constraint(model, 1*x[1] + 0.1*x[2] >= 4 +(1-u)*M)
-        @constraint(model, 0.4*x[1] + 1*x[2] >= 4 +(1-u)*M)
+        @constraint(m, 1*x[1] + 0.1*x[2] >= 4 +(1-u)*M)
+        @constraint(m, 0.4*x[1] + 1*x[2] >= 4 +(1-u)*M)
 
-        solveMIP(model)
+        solveMIP(m)
 
-        @test model.ext[:status] == :Unbounded
+        @test m.ext[:status] == :Unbounded
         setoutputs!(m,solution)
     end
     return solution
@@ -510,20 +521,20 @@ function test3_3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver
     Cinv = 13.16
     M = 200
     @testset "Teste da Expansao da Infeasible" begin
-        model = Model(solver = solver)
-        @variable(model, x[i=1:2]>=0)
-        @variable(model, u, Bin)
-        @objective(model, Max, 4*x[1] + 3*x[2] - u*Cinv)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2]>=0)
+        @variable(m, u, Bin)
+        @objective(m, Max, 4*x[1] + 3*x[2] - u*Cinv)
 
-        @constraint(model, 2*x[1] + 1*x[2] <= 4 -u*M)
-        @constraint(model, 1*x[1] + 2*x[2] <= 4 -u*M)
+        @constraint(m, 2*x[1] + 1*x[2] <= 4 -u*M)
+        @constraint(m, 1*x[1] + 2*x[2] <= 4 -u*M)
 
-        @constraint(model, 1*x[1] + 0.1*x[2] <= 4 -(1-u)*M)
-        @constraint(model, 0.4*x[1] + 1*x[2] <= 4 -(1-u)*M)
+        @constraint(m, 1*x[1] + 0.1*x[2] <= 4 -(1-u)*M)
+        @constraint(m, 0.4*x[1] + 1*x[2] <= 4 -(1-u)*M)
 
-        solveMIP(model)
+        solveMIP(m)
 
-        @test model.ext[:status] == :Infeasible
+        @test m.ext[:status] in [:Infeasible,:InfeasibleOrUnbounded]
 
         setoutputs!(m,solution)
     end
@@ -543,23 +554,23 @@ function test_feature_selection_pequeno_viavel(solveMIP::Function, solver::MathP
     index_vector = datamatrix*weights
     maxweight  = maximum(weights)+1
     @testset "Teste Feature selection pequeno Viavel" begin
-        model = Model(solver = solver)
-        @objective(model, Max, 0)
+        m = Model(solver = solver)
+        @objective(m, Max, 0)
 
-        @variable(model, w[i=1:numpossiblevar]>=0)
-        @variable(model, u[i=1:numpossiblevar], Bin)
+        @variable(m, w[i=1:numpossiblevar]>=0)
+        @variable(m, u[i=1:numpossiblevar], Bin)
 
-        @constraint(model, sum(u) == numvar)
+        @constraint(m, sum(u) == numvar)
 
-        @constraints(model,begin
+        @constraints(m,begin
           dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
         end)
 
-        @constraints(model,begin
+        @constraints(m,begin
           linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
         end)
 
-        solveMIP(model)
+        solveMIP(m)
 
         utest = [ones(numvar);zeros(numpossiblevar-numvar)]
         @test utest == getvalue(u)
@@ -583,23 +594,23 @@ function test_feature_selection_medio(solveMIP::Function, solver::MathProgBase.A
     index_vector = datamatrix*weights
     maxweight  = maximum(weights)+1
     @testset "Teste Feature selection pequeno Viavel" begin
-        model = Model(solver = solver)
-        @objective(model, Max, 0)
+        m = Model(solver = solver)
+        @objective(m, Max, 0)
 
-        @variable(model, w[i=1:numpossiblevar]>=0)
-        @variable(model, u[i=1:numpossiblevar], Bin)
+        @variable(m, w[i=1:numpossiblevar]>=0)
+        @variable(m, u[i=1:numpossiblevar], Bin)
 
-        @constraint(model, sum(u) == numvar)
+        @constraint(m, sum(u) == numvar)
 
-        @constraints(model,begin
+        @constraints(m,begin
           dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
         end)
 
-        @constraints(model,begin
+        @constraints(m,begin
           linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
         end)
 
-        solveMIP(model)
+        solveMIP(m)
 
         utest = [ones(numvar);zeros(numpossiblevar-numvar)]
         @test utest == getvalue(u)
@@ -623,23 +634,23 @@ function test_feature_selection_grande(solveMIP::Function, solver::MathProgBase.
     index_vector = datamatrix*weights
     maxweight  = maximum(weights)+1
     @testset "Teste Feature selection pequeno Viavel" begin
-        model = Model(solver = solver)
-        @objective(model, Max, 0)
+        m = Model(solver = solver)
+        @objective(m, Max, 0)
 
-        @variable(model, w[i=1:numpossiblevar]>=0)
-        @variable(model, u[i=1:numpossiblevar], Bin)
+        @variable(m, w[i=1:numpossiblevar]>=0)
+        @variable(m, u[i=1:numpossiblevar], Bin)
 
-        @constraint(model, sum(u) == numvar)
+        @constraint(m, sum(u) == numvar)
 
-        @constraints(model,begin
+        @constraints(m,begin
           dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
         end)
 
-        @constraints(model,begin
+        @constraints(m,begin
           linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
         end)
 
-        solveMIP(model)
+        solveMIP(m)
 
         utest = [ones(numvar);zeros(numpossiblevar-numvar)]
         @test utest == getvalue(u)
@@ -663,25 +674,25 @@ function test_feature_selection_pequeno_inviavel(solveMIP::Function, solver::Mat
     index_vector = -datamatrix*weights
     maxweight  = maximum(weights)+1
     @testset "Teste Feature selection pequeno Viavel" begin
-        model = Model(solver = solver)
-        @objective(model, Max, 0)
+        m = Model(solver = solver)
+        @objective(m, Max, 0)
 
-        @variable(model, w[i=1:numpossiblevar]>=0)
-        @variable(model, u[i=1:numpossiblevar], Bin)
+        @variable(m, w[i=1:numpossiblevar]>=0)
+        @variable(m, u[i=1:numpossiblevar], Bin)
 
-        @constraint(model, sum(u) == numvar)
+        @constraint(m, sum(u) == numvar)
 
-        @constraints(model,begin
+        @constraints(m,begin
           dummy[i=1:numpossiblevar], w[i] <= u[i]*maxweight
         end)
 
-        @constraints(model,begin
+        @constraints(m,begin
           linhas[i=1:numconstraints], (datamatrix*w)[i] == index_vector[i]
         end)
 
-        solveMIP(model)
+        solveMIP(m)
 
-        @test model.ext[:status] == :Infeasible
+        @test m.ext[:status] == :Infeasible
 
         setoutputs!(m,solution)
     end
@@ -693,18 +704,18 @@ end
 function teste_PL_andrew_unbounded(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Teste PL viavel da ucla" begin
-        model = Model(solver = solver)
-        @variable(model, x[i=1:3]>=0)
-        @variable(model, x4)
-        @objective(model, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3]>=0)
+        @variable(m, x4)
+        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
 
-        @constraint(model, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
-        @constraint(model, x[1] - x[2] + 2*x[3] == 2)
-        @constraint(model, x[1] + x[2] + x[3] + x4 >= 1)
+        @constraint(m, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
+        @constraint(m, x[1] - x[2] + 2*x[3] == 2)
+        @constraint(m, x[1] + x[2] + x[3] + x4 >= 1)
 
-        solveMIP(model)
+        solveMIP(m)
 
-        @test model.ext[:status] == :Unbounded
+        @test m.ext[:status] == :Unbounded
 
         setoutputs!(m,solution)
     end
@@ -716,18 +727,18 @@ end
 function teste_PL_andrew_viavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Teste PL viavel da ucla" begin
-        model = Model(solver = solver)
-        @variable(model, x[i=1:3]>=0)
-        @variable(model, x4>=0)
-        @objective(model, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3]>=0)
+        @variable(m, x4>=0)
+        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
 
-        @constraint(model, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
-        @constraint(model, x[1] - x[2] + 2*x[3] == 2)
-        @constraint(model, x[1] + x[2] + x[3] + x4 >= 1)
+        @constraint(m, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
+        @constraint(m, x[1] - x[2] + 2*x[3] == 2)
+        @constraint(m, x[1] + x[2] + x[3] + x4 >= 1)
 
-        solveMIP(model)
+        solveMIP(m)
 
-        @test getobjectivevalue(model) == 27
+        @test getobjectivevalue(m) == 27
         @test getvalue(x) ≈ [0.0;3.6;2.8] atol=1E-07
         @test getvalue(x4) == 0
 
@@ -741,23 +752,24 @@ end
 function teste_PL_andrew_inviavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Teste PL viavel da ucla" begin
-        model = Model(solver = solver)
-        @variable(model, x[i=1:3]>=0)
-        @variable(model, x4>=0)
-        @objective(model, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3]>=0)
+        @variable(m, x4>=0)
+        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
 
-        @constraint(model, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= -10)
-        @constraint(model, x[1] - x[2] + 2*x[3] == 2)
-        @constraint(model, x[1] + x[2] + x[3] + x4 >= 1)
+        @constraint(m, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= -10)
+        @constraint(m, x[1] - x[2] + 2*x[3] == 2)
+        @constraint(m, x[1] + x[2] + x[3] + x4 >= 1)
 
-        solveMIP(model)
+        solveMIP(m)
 
-        @test model.ext[:status] == :Infeasible
+        @test m.ext[:status] == :Infeasible
 
         setoutputs!(m,solution)
     end
     return solution
 end
+
 # teste MIP unbounded
 # adicionado por Raphael Saavedra
 function testUnboundedKnapsack(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -781,51 +793,51 @@ end
 # teste Infeasible Unit Commitment
 # adicionado por Raphael Saavedra
 function testInfeasibleUC(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-  solution = MIPSolution()
-  #------------------------------------------------------------------------------
-  # Parameters
-  T = collect(1:10) # periods
-  N = collect(1:5) # generators
-  p0 = zeros(N[end]) # initial power output
-  v0 = zeros(N[end]) # initial on/off state
-  D = [400; 390; 380; 370; 360; 350; 340; 330; 320; 500] # demand
-  Cf = [100; 100; 100; 100; 100] # fixed cost
-  Cl = [10; 20; 30; 40; 50] # linear cost
-  Pmax = [100; 100; 100; 100; 100] # generator capacity
-  Pmin = [10; 10; 10; 10; 10] # minimum power output
-  RD = [10; 20; 30; 40; 50] # ramp-down limit
-  RU = [10; 25; 30; 40; 50] # ramp-up limit
-  SD = RD # shutdown ramp limit
-  SU = RU # startup ramp limit
-  #------------------------------------------------------------------------------
-  @testset "Teste Infeasible Unit Commitment" begin
-
-    m = Model(solver = solver)
-    #----------------------------------------------------------------------------
-    # Variables
-    @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
-    @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
-    #----------------------------------------------------------------------------
-    # Constraints
-    @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
-    @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
-    @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
-    @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
-    @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
-    # Constraints regarding initial state
-    @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
-    @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
-    #----------------------------------------------------------------------------
-    # Objective function
-    @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T))
+    solution = MIPSolution()
     #------------------------------------------------------------------------------
-    solveMIP(m)
+    # Parameters
+    T = collect(1:10) # periods
+    N = collect(1:5) # generators
+    p0 = zeros(N[end]) # initial power output
+    v0 = zeros(N[end]) # initial on/off state
+    D = [400; 390; 380; 370; 360; 350; 340; 330; 320; 500] # demand
+    Cf = [100; 100; 100; 100; 100] # fixed cost
+    Cl = [10; 20; 30; 40; 50] # linear cost
+    Pmax = [100; 100; 100; 100; 100] # generator capacity
+    Pmin = [10; 10; 10; 10; 10] # minimum power output
+    RD = [10; 20; 30; 40; 50] # ramp-down limit
+    RU = [10; 25; 30; 40; 50] # ramp-up limit
+    SD = RD # shutdown ramp limit
+    SU = RU # startup ramp limit
+    #------------------------------------------------------------------------------
+    @testset "Teste Infeasible Unit Commitment" begin
 
-    @test m.ext[:status] == :Infeasible
+        m = Model(solver = solver)
+        #----------------------------------------------------------------------------
+        # Variables
+        @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
+        @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
+        #----------------------------------------------------------------------------
+        # Constraints
+        @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
+        @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
+        @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
+        @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+        # Constraints regarding initial state
+        @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
+        @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+        #----------------------------------------------------------------------------
+        # Objective function
+        @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T))
+        #------------------------------------------------------------------------------
+        solveMIP(m)
 
-    setoutputs!(m,solution)
-  end
-  return solution
+        @test m.ext[:status] == :Infeasible
+
+        setoutputs!(m,solution)
+    end
+    return solution
 end
 
 # teste PL simples
@@ -956,13 +968,12 @@ end
 
 
 #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Custo fixo" begin
 
         #Custo Unitário
         c = [2; 3; 2; 5; 6]
-
 
         #Custo Fixo
         f = [1; 3; 1; 5; 10]
@@ -988,17 +999,16 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @objective(m, Min, sum(f[j]*y[j]+c[j]*x[j] for j=1:5))
 
         solveMIP(m)
-        @test getobjectivevalue(m) == 27
-        @test getvalue(x) == [5 2 3 0 0]
+        @test getobjectivevalue(m) ≈ 27
+        @test getvalue(x) ≈ [5, 2, 3, 0, 0]
 
         setoutputs!(m,solution)
     end
     return solution
 end
 
-#-------------------------------------
 #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Cobertura de pontos" begin
 
@@ -1021,15 +1031,17 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
           end)
         @objective(m, Min, sum(c[j]*x[j] for j=1:3))
 
-        m.ext[:status] == :Infeasible
+        solveMIP(m)
+
+        @test m.ext[:status] == :Infeasible
 
         setoutputs!(m,solution)
     end
     return solution
 end
-#-------------------------------------
+
 #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Cobertura de pontos" begin
 
@@ -1051,20 +1063,17 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @objective(m, Min, sum(c[j]*x[j] for j=1:3))
 
         solveMIP(m)
-        @test getobjectivevalue(m) == 6
-        @test getvalue(x) == [1 0 1]
+        @test getobjectivevalue(m) ≈ 6
+        @test getvalue(x) ≈ [1, 0, 1]
 
         setoutputs!(m,solution)
     end
     return solution
 end
 
-
-#---------------------
-
 #adicionado por Rodrigo Villas
 #Produção com custo fixo Inviavel
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_4(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Custo fixo" begin
 
@@ -1075,23 +1084,20 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @variable(m, x[i=1:vari]>=0)
         @variable(m,y[i=1:vari], Bin)
         @constraint(m, sum(x[j] for j=1:vari) >= 2*vari)
-        @constraints(m, begin
-          constrain[i=1:vari], x[i] <= 1*y[i]
-          end)
+        @constraint(m, [i=1:vari], x[i] <= 1*y[i])
 
-        @objective(m, Min, sum(j*y[j]+(vari-j)*x[j] for j=1:vari)
+        @objective(m, Min, sum(j*y[j]+(vari-j)*x[j] for j=1:vari))
 
         solveMIP(m)
-        m.ext[:status] == :Infeasible
+        @test m.ext[:status] == :Infeasible
 
         setoutputs!(m,solution)
     end
     return solution
 end
-#------------------------------------------
 
- #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+#adicionado por Rodrigo Villas
+function test_rv_5(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Custo fixo" begin
 
@@ -1112,49 +1118,48 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         @objective(m, Min, sum(j*y[j]+(vari-j)*x[j] for j=1:vari))
 
         solveMIP(m)
-        @test getobjectivevalue(m) == 36025
+        @test getobjectivevalue(m) ≈ 36025
 
         #Os últimos Y's tem que estar "ligados"
         setoutputs!(m,solution)
     end
     return solution
 end
-#-----------------------
 
 #Expansão Unbounded
  #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_6(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     @testset "Expansão Unbouded" begin
 
-
         Cinv = 13.16
-           M = 200
+        M = 200
 
-               m = Model(solver = solver)
-               @variable(m, x[i=1:2])
-               @variable(m, u, Bin)
-               @objective(m, Min, 4*x[1] + 3*x[2] - u*Cinv)
+        m = Model(solver = solver)
+        @variable(m, x[i=1:2])
+        @variable(m, u, Bin)
+        @objective(m, Min, 4*x[1] + 3*x[2] - u*Cinv)
 
-               @constraint(m, 2*x[1] + 1*x[2] <= 4 +u*M)
-               @constraint(m, 1*x[1] + 2*x[2] <= 4 +u*M)
+        @constraint(m, 2*x[1] + 1*x[2] <= 4 +u*M)
+        @constraint(m, 1*x[1] + 2*x[2] <= 4 +u*M)
 
-               @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
-               @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
+        @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
+        @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
+
         solveMIP(m)
-        m.ext[:status] == :Infeasible  #Unbounded
+        @test m.ext[:status] == :Unbounded
         setoutputs!(m,solution)
-        end
+    end
     return solution
 end
 
 #--------------------------
  #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_7(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
 solution = MIPSolution()
     @testset "PL da minha cabeça" begin
 
-
+        m = Model(solver = solver)
         @variable(m, x[i=1:4]>=0)
 
         @constraint(m, x[1]+x[2]+x[3]<=3)
@@ -1164,23 +1169,20 @@ solution = MIPSolution()
         @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
         solveMIP(m)
-        @test getobjectivevalue(m) == 13
-        @test getvalue(x) == [2 1 0 0]
+        @test getobjectivevalue(m) ≈ 13
+        @test getvalue(x) ≈ [2, 1, 0, 0]
 
         setoutputs!(m,solution)
-        end
+    end
     return solution
 end
 
-
-
-#--------------------------
  #adicionado por Rodrigo Villas
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_rv_8(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
 solution = MIPSolution()
     @testset "PL da minha cabeça" begin
 
-
+        m = Model(solver = solver)
         @variable(m, x[i=1:4]>=0)
 
         @constraint(m, x[1]+x[2]+x[3]<=3)
@@ -1190,7 +1192,7 @@ solution = MIPSolution()
         @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
         solveMIP(m)
-        m.ext[:status] == :Infeasible
+        @test m.ext[:status] == :Infeasible
 
         setoutputs!(m,solution)
         end
