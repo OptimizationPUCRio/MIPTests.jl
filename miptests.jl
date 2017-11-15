@@ -848,3 +848,118 @@ function testSudoku4x4(solveMIP::Function, solver::MathProgBase.AbstractMathProg
         @test M == [1 2 4 3; 4 3 1 2; 3 4 2 1; 2 1 3 4]
     end
 end
+
+#teste Alocacao de portifolio P1 Andrew e Bianca (Viavel)
+#adicionado por Andrew Rosemberg
+function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+
+  # params
+  numD = 50 #num days
+  numA = 7 #num assets
+  price_rf = 5#0.0001
+  W_0 = 100000
+  j_robust = 3
+  cost_trans = fill(8,numA+1)
+  rf = (1+7.5/100).^(1/252)-1
+  λ = 0.01*rf
+  #init
+  x_t1 = zeros(numA+1)
+  x_t1[1] = W_0
+
+  #Generate asset prices
+
+  srand(82)
+  prices = rand(1:100)+sin(linspace(rand()*pi,numD))+randn(numD)*1
+
+  for i= 2:numA
+    srand(i)
+    prices = [prices rand(1:100)+sin(linspace(rand()*pi,numD))+randn(numD)*i]
+  end
+  returns= (prices[2:numD,1:numA].-prices[1:numD-1,1:numA])./prices[1:numD-1,1:numA]
+  prices = [fill(price_rf, size(prices,1)) prices]
+
+  t_1 = size(returns,1)
+  ################# Predict return ######################
+  r_bar_t = zeros(numA)
+
+  r_bar_t[1] = rf
+  for i = 2:numA
+    r_bar_t[i] = mean(returns[:,i])
+  end
+
+  #######################################################
+    @testset "Alocacao de portifolio Viavel" begin
+        myModel = Model(solver = solver)
+        # Decision variables
+        @variable(myModel, X[1:numA]>=0)
+        @variable(myModel, u_buy[1:numA]>=0 )  #Int
+        @variable(myModel, u_sell[1:numA]>=0 )  #Int
+        @variable(myModel, bin_buy[1:numA] , Bin)
+        @variable(myModel, bin_sell[1:numA] , Bin)
+        #expansao binaria
+        numexp = 8
+        @variable(myModel, expbin_buy[1:numA,1:numexp] , Bin)
+        @variable(myModel, expbin_sell[1:numA,1:numexp] , Bin)
+        @constraints(myModel, begin
+          Expansaobuy[i=1:numA],  u_buy[i] == sum(expbin_buy[i,j+1]*(2^j) for j=0:numexp-1)
+        end)
+        @constraints(myModel, begin
+          Expansaosell[i=1:numA],  u_sell[i] == sum(expbin_sell[i,j+1]*(2^j) for j=0:numexp-1)
+        end)
+
+        @constraints(myModel, begin
+          link_buy[i=1:numA],  prices[i]*u_buy[i] <= bin_buy[i]*W_0
+        end)
+        @constraints(myModel, begin
+          link_sell[i=1:numA],  prices[i]*u_sell[i] <= bin_sell[i]*W_0
+        end)
+
+
+        # Robust Constraints
+        @constraints(myModel, begin
+          robust[j=0:j_robust-1],  sum(returns[t_1-j,i-1]*X[i] for i=2:numA) >= λ*W_0
+        end)
+
+        # addapt alocation considering buy and sell costs
+        @constraints(myModel, begin
+          alocation1[i=1:numA],  X[i] == x_t1[i] + prices[i]*u_buy[i] - prices[i]*u_sell[i] -cost_trans[i]*(bin_buy[i]+bin_sell[i])
+        end)
+
+        # buy limit to bank reserve
+        @constraint(myModel, sum(prices[i]*u_buy[i] for i=1:numA)-sum(prices[i]*u_sell[i] for i=1:numA) == 0)
+
+        # objective function
+        @objective(myModel, Max, sum(r_bar_t[i]*X[i] for i = 1:numA) - sum(cost_trans[i]*(bin_buy[i]+bin_sell[i]) for i = 1:numA)) # + sum((sum(returns[t_1-j,i-1]*X[i] for i=2:numA) - λ*W_0) for j=0:j_robust-1 )*penalizerobust )
+
+        solveMIP(myModel)
+
+        x =[98717.0;
+           627.0;
+           187.0;
+             0.0;
+           437.0;
+             0.0;
+             0.0]
+        U_buy = [
+           0.0;
+         127.0;
+          39.0;
+           0.0;
+          89.0;
+           0.0;
+           0.0]
+
+        U_sell = [
+         255.0;
+           0.0;
+           0.0;
+           0.0;
+           0.0;
+           0.0;
+           0.0]
+
+        @test x ≈ getValue(X) atol=1E-07
+        @test U_buy ≈ getValue(u_buy) atol=1E-07
+        @test U_sell ≈ getValue(u_sell) atol=1E-07
+    end
+end
