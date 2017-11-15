@@ -1259,32 +1259,6 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
     return solution
 end
 
-function test_rv_6(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    solution = MIPSolution()
-    m = Model(solver = solver)
-    testresult = @testset "Expansão Unbouded" begin
-
-        Cinv = 13.16
-        M = 200
-
-        @variable(m, x[i=1:2])
-        @variable(m, u, Bin)
-        @objective(m, Min, 4*x[1] + 3*x[2] - u*Cinv)
-
-        @constraint(m, 2*x[1] + 1*x[2] <= 4 +u*M)
-        @constraint(m, 1*x[1] + 2*x[2] <= 4 +u*M)
-
-        @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
-        @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
-
-        solveMIP(m)
-        @test m.ext[:status] == :Unbounded
-    end
-    setoutputs!(m,solution,testresult)
-    return solution
-end
-
-
 
 #teste Alocacao de portifolio P1 Andrew e Bianca (Viavel)
 #adicionado por Andrew Rosemberg
