@@ -1323,11 +1323,11 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
   for i = 2:numA
     r_bar_t[i] = mean(returns[:,i])
   end
-
+  
   #######################################################
-  myModel = Model(solver = solver)
+  myModel = Model(solver = solver)                                          
   testresult = @testset "Alocacao de portifolio Viavel" begin
-
+        
         # Decision variables
         @variable(myModel, X[1:numA]>=0)
         @variable(myModel, u_buy[1:numA]>=0 )  #Int
@@ -1398,7 +1398,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
 
         @test x ≈ getValue(X) atol=1E-07
         @test U_buy ≈ getValue(u_buy) atol=1E-07
-        @test U_sell ≈ getValue(u_sell) atol=1E-07
+        @test U_sell ≈ getValue(u_sell) atol=1E-07      
     end
     setoutputs!(myModel,solution,testresult)
     return solution
@@ -1406,12 +1406,12 @@ end
 
 #--------------------------
 
-#adicionado por Rodrigo Villas
+#adicionado por Rodrigo Villas                                                                         
 function test_rv_p1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
-    m = Model(solver = solver)
-
-    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin
+    m = Model(solver = solver)                       
+   
+    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin           
 
         QtdComp = 3
         Pcomp = [20 8 7]
@@ -1529,14 +1529,47 @@ function test_rv_p1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSol
         end)
         @objective(m, Max, sum(cstd[j]*x[j] for j=1:QtdComp+2)+sum(cstd[k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(cstd[h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(cstd[u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre))
 
-
+            
         sol = solveMIP(m)
-        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)
+        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)    
         # vc tem que produzir 4.5, confiram
-    end
+    end                    
+=======
+
+        #Ordem: Gvc G1 G2 G3 Spot PIvc PI1 PI2 PI3 z1 z2 z3 w1 w2 w3 x1 x2 x3 y1 y2 y3 #
+        c = [Pmin-custo; zeros(QtdComp+1,1); Qmin; zeros(QtdComp,1); deltasPreço' ;deltasOferta' ;zeros(2*Qdiscre,1)]
+
+        @variable(m, y[i=QtdVariaveis-2*Qdiscre+1:QtdVariaveis]>=0, Bin)
+
+        @variable(m, dual[i=QtdComp+3:2*QtdComp+3]>=0)
+
+        p, n = size(A)
+        Astd = zeros(p,p+n)
+        cstd = zeros(p+n)
+        Astd = [A eye(p)]
+        cstd = [c ; zeros(p)]
+
+        #---------------------------
+
+        p,k = size(Astd)
+        @variable(m, x[i=1:QtdComp+2]>=0)
+        @variable(m, xc[i=2*QtdComp+4:QtdVariaveis-2*Qdiscre]>=0)
+        @variable(m, z[i=QtdVariaveis+1:k]>=0)
+        @constraints(m, begin
+        constrain[i=1:p], sum(Astd[i,j]*x[j] for j=1:QtdComp+2)+sum(Astd[i,k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(Astd[i,l]*z[l] for l=QtdVariaveis+1:k)+sum(Astd[i,h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(Astd[i,u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre)<= b[i]
+        end)
+        @objective(m, Max, sum(cstd[j]*x[j] for j=1:QtdComp+2)+sum(cstd[k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(cstd[h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(cstd[u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre))
+
+            
+        sol = solveMIP(m)
+        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)    
+        # vc tem que produzir 4.5, confiram
+    end                    
+>>>>>>> origin/master
     setoutputs!(m,solution,testresult)
-    return solution
-end
+    return solution       
+end       
+
 
 
  #adicionado por Rodrigo Villas
