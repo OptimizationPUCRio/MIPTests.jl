@@ -1282,7 +1282,6 @@ function test_rv_6(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolv
     end
     setoutputs!(m,solution,testresult)
     return solution
-
 end
 
 #--------------------------
@@ -1320,45 +1319,6 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
     testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin
 
 
-=======
-end
-
-#--------------------------
-
- #adicionado por Rodrigo Villas                       
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    
-         solution = MIPSolution()
-         m = Model(solver = solver)             
-         testresult =@testset "PL da minha cabeça" begin
-                                
-                                
-               @variable(m, x[i=1:4]>=0)
-
-               @constraint(m, x[1]+x[2]+x[3]<=3)
-               @constraint(m, x[4]+2*x[1]+6*x[3]<=10)
-               @constraint(m, 4*x[3]+x[1]+3*x[2]<=5)
-               @constraint(m, x[3]==2)                
-               @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
-
-               sol = solveMIP(m)                                                
-               m.ext[:status] == :Infeasible
-          end                
-                      
-        setoutputs!(m,solution,testresult)
-        return solution                        
-end                                        
-
-#--------------------------
-#adicionado por Rodrigo Villas                                                                         
-function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    solution = MIPSolution()
-    m = Model(solver = solver)                       
-   
-    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin
-                  
-                 
->>>>>>> origin/master
 
     QtdComp = 3
 
@@ -1485,14 +1445,14 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
     end)
     @objective(m, Max, sum(cstd[j]*x[j] for j=1:QtdComp+2)+sum(cstd[k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(cstd[h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(cstd[u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre))
 
-        
+
     sol = solveMIP(m)
-    @test getobjectivevalue(m) == 90  atol = exp10(-5)    
+    @test getobjectivevalue(m) == 90  atol = exp10(-5)
     # vc tem que produzir 4.5, confiram
-  end                    
+  end
     setoutputs!(m,solution,testresult)
-    return solution       
-end       
+    return solution
+end
 
  #adicionado por Rodrigo Villas
 function test_rv_7(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -1655,4 +1615,3 @@ function test_optimal_dispatch(solveMIP::Function, solver::MathProgBase.Abstract
     setoutputs!(m,solution,testresult)
     return solution
 end
-
