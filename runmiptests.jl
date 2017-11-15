@@ -18,7 +18,7 @@ testset = [
 
     (testSudoku, "RS", "MIP-m"),
     (testInfeasibleKnapsack, "RS", "MIP-inf-p"),
-    (testRobustCCUC, "RS", "MIP-g1"),
+    #(testRobustCCUC, "RS", "MIP-g1"),
     (testUnboundedKnapsack, "RS", "MIP-unb"),
     (testInfeasibleUC, "RS", "MIP-inf"),
     (test_PL_Simples_Raphael, "RS", "LP-opt"),
