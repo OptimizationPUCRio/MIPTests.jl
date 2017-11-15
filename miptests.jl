@@ -1298,7 +1298,7 @@ function test_optimal_dispatch(solveMIP::Function, solver::MathProgBase.Abstract
         @constraint(m, [i in I, t in 1], p0[i] - p[i,t] <= RD[i]*v[i,t] + Pmax[i]*vd[i,t])
         sol = solveMIP(m)
 
-        @test getobjectivevalue(m) == 5150.0
+        @test getobjectivevalue(m) ≈ 5150 atol = exp10(-5)
         @test sum(getvalue(p[2,:])) == 98.0
         @test sum(getvalue(v[1,:])) == 0.00
         @test sum(getvalue(v)) == 4.00
