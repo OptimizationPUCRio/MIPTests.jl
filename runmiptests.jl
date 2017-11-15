@@ -48,6 +48,7 @@ testset = [
     (test_rv_4, "RV", "LP-inf"),
     (test_rv_7, "RV", "LP-opt"),
     (test_rv_8, "RV", "LP-inf"),
+    (test_rv_p1, "RV", "MIP-p1"),
 
 ]
 
