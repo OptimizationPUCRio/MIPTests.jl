@@ -59,7 +59,7 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
             end
         end
         mat = table2mat(table)
-        writecsv("result.out",mat)
+        writecsv("result_$(solveMIP)_$(solver).out",mat)
     end
 
     return table
