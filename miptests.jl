@@ -1337,7 +1337,7 @@ function test_rv_7(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolv
         @objective(m, Max, 4*x[1]+5*x[2]+2*x[3]-3*x[4])
 
         solveMIP(m)
-        @test getobjectivevalue(m) == 13
+        @test getobjectivevalue(m) ≈ 13
         @test getvalue(x) ≈ [2, 1, 0, 0]
 
     end
