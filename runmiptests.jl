@@ -18,7 +18,7 @@ testset = [
 
     (testSudoku, "RS", "MIP-m"),
     (testInfeasibleKnapsack, "RS", "MIP-inf-p"),
-    #(testRobustCCUC, "RS", "MIP-g1"),
+    (testRobustCCUC, "RS", "MIP-g1"),
     (testUnboundedKnapsack, "RS", "MIP-unb"),
     (testInfeasibleUC, "RS", "MIP-inf"),
     (test_PL_Simples_Raphael, "RS", "LP-opt"),
@@ -48,15 +48,16 @@ testset = [
     (test_rv_4, "RV", "LP-inf"),
     (test_rv_7, "RV", "LP-opt"),
     (test_rv_8, "RV", "LP-inf"),
+    (test_rv_p1, "RV", "MIP-p1"),
 
 ]
 
-function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); author = String[], kind = String[])
+function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); author = String[], kind = String[], ignore = String[])
 
     table = MIPSolution[]
     @testset "Main" begin
         for teste in testset
-            if (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
+            if !("$(teste[1])" in ignore) && (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
                 line = teste[1](solveMIP, solver)
                 line.name = "$(teste[1]) - $(teste[2])"
                 push!(table, line)
