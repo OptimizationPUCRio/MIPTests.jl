@@ -34,7 +34,7 @@ function setoutputs!(m,sol::MIPSolution, test)
     end
     return nothing
 end
-  
+
 
 #≈
 
@@ -1201,7 +1201,7 @@ end
 
 #teste MIP médio TSP de 20 cidades
 #adicionado por Guilherme Bodin
-function test_MIP_médio_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+function test_MIP_medio_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
     testresult = @testset "Teste MIP médio Guilherme (TSP 30 cidades)" begin
@@ -1339,7 +1339,7 @@ function test_rv_8(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolv
     setoutputs!(m,solution,testresult)
     return solution
 end
-                               
+
 function test_optimal_dispatch(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
