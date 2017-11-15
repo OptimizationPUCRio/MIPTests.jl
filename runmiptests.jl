@@ -40,6 +40,9 @@ testset = [
     (teste_PL_andrew_viavel, "AR", "LP-opt"),
     (teste_PL_andrew_inviavel, "AR", "LP-inf"),
 
+    (test_P1_Andrew_Bianca_viavel, "AR", "MIP-g1"),
+    
+
     (test_rv_1, "RV", "MIP-pp"),
     (test_rv_3, "RV", "MIP-p"),
     (test_rv_5, "RV", "MIP-m"),
