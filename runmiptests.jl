@@ -49,11 +49,12 @@ testset = [
 function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); author = String[], kind = String[])
     
     table = MIPSolution[]
-
-    for teste in testset
-        if (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
-            line = teste[1](solveMIP, solver)
-            push!(table, line)
+    @testset "Main" begin
+        for teste in testset
+            if (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
+                line = teste[1](solveMIP, solver)
+                push!(table, line)
+            end
         end
     end
 
@@ -61,9 +62,9 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
 end
 
 function table2mat(table)
-    out = Any["Objective" "BestBound" "Time" "Nodes" "IntSols" "Status"]
+    out = Any["Pass" "Objective" "BestBound" "Time" "Nodes" "IntSols" "Status"]
     for line in table
-        out = vcat(out, Any[line.objective line.bestbound line.time line.nodes line.intsols line.status])
+        out = vcat(out, Any[line.pass line.objective line.bestbound line.time line.nodes line.intsols line.status])
     end
     return out
 end
