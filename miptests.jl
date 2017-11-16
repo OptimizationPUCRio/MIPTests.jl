@@ -694,10 +694,10 @@ end
 function teste_PL_andrew_unbounded(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
-    testresult = @testset "Teste PL viavel da ucla" begin
+    testresult = @testset "Teste PL unbounded da ucla" begin
         @variable(m, x[i=1:3]>=0)
         @variable(m, x4)
-        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4)
 
         @constraint(m, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
         @constraint(m, x[1] - x[2] + 2*x[3] == 2)
@@ -720,7 +720,7 @@ function teste_PL_andrew_viavel(solveMIP::Function, solver::MathProgBase.Abstrac
     testresult = @testset "Teste PL viavel da ucla" begin
         @variable(m, x[i=1:3]>=0)
         @variable(m, x4>=0)
-        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4)
 
         @constraint(m, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= 10)
         @constraint(m, x[1] - x[2] + 2*x[3] == 2)
@@ -728,7 +728,7 @@ function teste_PL_andrew_viavel(solveMIP::Function, solver::MathProgBase.Abstrac
 
         solveMIP(m)
 
-        @test getobjectivevalue(m) == 27
+        @test getobjectivevalue(m) == 22
         @test getvalue(x) ≈ [0.0;3.6;2.8] atol=1E-07
         @test getvalue(x4) == 0
 
@@ -742,10 +742,10 @@ end
 function teste_PL_andrew_inviavel(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
-    testresult = @testset "Teste PL viavel da ucla" begin
+    testresult = @testset "Teste PL inviavel da ucla" begin
         @variable(m, x[i=1:3]>=0)
         @variable(m, x4>=0)
-        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4 +5)
+        @objective(m, Max, x[1] + 3*x[2] + 4*x[3] + 2*x4)
 
         @constraint(m, 4*x[1] + 2*x[2] +x[3] + 3*x4 <= -10)
         @constraint(m, x[1] - x[2] + 2*x[3] == 2)
