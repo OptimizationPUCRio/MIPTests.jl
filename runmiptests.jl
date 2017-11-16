@@ -8,6 +8,11 @@ testset = [
     (test_PL_Infeasible_Guilherme, "GB", "MIP-inf-p"),
     (test_MIP_medio_Guilherme, "GB", "MIP-m"),
     (test_MIP_Grande_Guilherme, "GB", "MIP-g"),
+    (test_PL_Unbounded_Guilherme, "GB", "LP-unb"),
+    (test_MIP_Unbounded_Guilherme, "GB", "MIP-unb"),
+    (test_MIP_Infeasible_Minimal_Guilherme, "GB", "MIP-inf-m"),
+    (test_MIP_Infeasible_Pequeno_Guilherme, "GB", "MIP-inf-m"),
+    (test_PL_Guilherme, "GB", "LP-p"),
 
     (test_P1_Brito, "EB", "MIP-g1"),
     (test_PL_Simples_Brito, "EB", "LP-p"),
@@ -41,7 +46,6 @@ testset = [
     (teste_PL_andrew_inviavel, "AR", "LP-inf"),
 
     (test_P1_Andrew_Bianca_viavel, "AR", "MIP-g1"),
-    
 
     (test_rv_1, "RV", "MIP-pp"),
     (test_rv_3, "RV", "MIP-p"),

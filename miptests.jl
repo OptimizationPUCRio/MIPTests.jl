@@ -1323,11 +1323,11 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
   for i = 2:numA
     r_bar_t[i] = mean(returns[:,i])
   end
-  
+
   #######################################################
-  myModel = Model(solver = solver)                                          
+  myModel = Model(solver = solver)
   testresult = @testset "Alocacao de portifolio Viavel" begin
-        
+
         # Decision variables
         @variable(myModel, X[1:numA]>=0)
         @variable(myModel, u_buy[1:numA]>=0 )  #Int
@@ -1398,7 +1398,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
 
         @test x ≈ getValue(X) atol=1E-07
         @test U_buy ≈ getValue(u_buy) atol=1E-07
-        @test U_sell ≈ getValue(u_sell) atol=1E-07      
+        @test U_sell ≈ getValue(u_sell) atol=1E-07
     end
     setoutputs!(myModel,solution,testresult)
     return solution
@@ -1406,12 +1406,12 @@ end
 
 #--------------------------
 
-#adicionado por Rodrigo Villas                                                                         
+#adicionado por Rodrigo Villas
 function test_rv_p1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
-    m = Model(solver = solver)                       
-   
-    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin           
+    m = Model(solver = solver)
+
+    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin
 
         QtdComp = 3
         Pcomp = [20 8 7]
@@ -1529,14 +1529,14 @@ function test_rv_p1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSol
         end)
         @objective(m, Max, sum(cstd[j]*x[j] for j=1:QtdComp+2)+sum(cstd[k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(cstd[h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(cstd[u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre))
 
-            
+
         sol = solveMIP(m)
-        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)    
+        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)
         # vc tem que produzir 4.5, confiram
-    end                    
+    end
     setoutputs!(m,solution,testresult)
-    return solution       
-end       
+    return solution
+end
 
 
  #adicionado por Rodrigo Villas
@@ -1701,3 +1701,137 @@ function test_optimal_dispatch(solveMIP::Function, solver::MathProgBase.Abstract
     return solution
 end
 
+#PL Unbounded
+#Adicionado por Guilherme Bodin
+function test_PL_Unbounded_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste PL Unbounded Guilherme" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:3])
+        @objective(m, Min, x[1]+x[2] + x[3])
+
+        solveMIP(m)
+        @test m.ext[:status] == :Unbounded
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste MIP Unbounded
+#adicionado por Guilherme Bodin
+function test_MIP_Unbounded_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Unbounded Guilherme " begin
+        number_of_nodes = 7
+
+        C = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
+             135.484    0.0     105.546   174.003   142.425    53.0094  105.991
+             142.801  105.546     0.0      87.6641   59.0      63.8905   73.5527
+             131.0    174.003    87.6641    0.0      31.9061  146.932   159.201
+             117.154  142.425    59.0      31.9061    0.0     115.521   132.306
+             153.473   53.0094   63.8905  146.932   115.521     0.0      55.4617
+             201.022  105.991    73.5527  159.201   132.306    55.4617    0.0   ]
+
+        ans = [0.0   0.0   0.0   1.0   0.0   0.0   0.0
+               1.0   0.0   0.0   0.0   0.0   0.0   0.0
+               0.0   0.0   0.0   0.0   0.0   0.0   1.0
+               0.0   0.0   0.0   0.0   1.0   0.0   0.0
+               0.0   0.0   1.0   0.0   0.0   0.0   0.0
+               0.0   1.0   0.0   0.0   0.0   0.0   0.0
+               0.0   0.0   0.0   0.0   0.0   1.0   0.0]
+
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=:1:number_of_nodes], Int)
+        @objective(m, Min, sum(C[i,j]*u[i] for i=1:number_of_nodes, j=1:number_of_nodes))
+        solveMIP(m)
+        @test m.ext[:status] == :Unbounded
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste MIP Infeasible Minimal
+#adicionado por Guilherme Bodin
+function test_MIP_Infeasible_Minimal_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Infeasible Minimal Guilherme" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:5], Bin)
+        @constraint(m, x[1] == 1)
+        @constraint(m, x[2] == 1)
+        @constraint(m, x[3] == 1)
+        @constraint(m, x[4] == 1)
+        @constraint(m, x[5] == 1)
+        @constraint(m, x[1] + x[2] + x[3] + x[4] + x[5] <= 4)
+        @objective(m, Min, x[1]+x[2])
+
+        solveMIP(m)
+        @test m.ext[:status] == :Infeasible
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste MIP Infeasible Pequeno
+#adicionado por Guilherme Bodin
+function test_MIP_Infeasible_Pequeno_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Infeasible Guilherme " begin
+        number_of_nodes = 7
+
+        C = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
+             135.484    0.0     105.546   174.003   142.425    53.0094  105.991
+             142.801  105.546     0.0      87.6641   59.0      63.8905   73.5527
+             131.0    174.003    87.6641    0.0      31.9061  146.932   159.201
+             117.154  142.425    59.0      31.9061    0.0     115.521   132.306
+             153.473   53.0094   63.8905  146.932   115.521     0.0      55.4617
+             201.022  105.991    73.5527  159.201   132.306    55.4617    0.0   ]
+
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=:1:number_of_nodes], Int)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            for j=2:number_of_nodes
+              if (i!=j)
+                @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
+              end
+            end
+        end
+        @constraint(m, sum(X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes) == 50)
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test m.ext[:status] == :Infeasible
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#PL
+#Adicionado por Guilherme Bodin
+function test_PL_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste PL Unbounded Guilherme" begin
+        m = Model(solver = solver)
+        @variable(m, x[i=1:50])
+        @constraint(m, sum(x[i] for i=1:50) >= 30)
+        @objective(m, Min, sum(x[i] for i=1:50))
+        solveMIP(m)
+        @test m.objVal == 30
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
