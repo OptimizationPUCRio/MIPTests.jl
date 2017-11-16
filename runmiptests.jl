@@ -51,7 +51,6 @@ testset = [
     (test_rv_3, "RV", "MIP-p"),
     (test_rv_5, "RV", "MIP-m"),
     (test_rv_2, "RV", "MIP-inf-p"),
-    (test_rv_6, "RV", "MIP-unb"),
     (test_rv_4, "RV", "LP-inf"),
     (test_rv_7, "RV", "LP-opt"),
     (test_rv_8, "RV", "LP-inf"),
@@ -66,6 +65,7 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
     @testset "Main" begin
         for teste in testset
             if !("$(teste[1])" in ignore) && (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
+                println("$(teste[1])")
                 line = teste[1](solveMIP, solver)
                 line.name = "$(teste[1]) - $(teste[2])"
                 push!(table, line)

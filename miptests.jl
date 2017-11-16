@@ -17,7 +17,7 @@ type MIPSolution
 end
 
 function setoutputs!(m,sol::MIPSolution, test)
-    sol.pass = !test.anynonpass
+    sol.pass = length(test.results) == 0
     sol.objective = getobjectivevalue(m)
     sol.bestbound = m.objBound
     if haskey(m.ext,:time)
@@ -50,7 +50,6 @@ function test1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver =
         solveMIP(m)
         @test getobjectivevalue(m) == 0
         @test getvalue(x) == 0
-
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1259,32 +1258,6 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
     return solution
 end
 
-function test_rv_6(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
-    solution = MIPSolution()
-    m = Model(solver = solver)
-    testresult = @testset "Expansão Unbouded" begin
-
-        Cinv = 13.16
-        M = 200
-
-        @variable(m, x[i=1:2])
-        @variable(m, u, Bin)
-        @objective(m, Min, 4*x[1] + 3*x[2] - u*Cinv)
-
-        @constraint(m, 2*x[1] + 1*x[2] <= 4 +u*M)
-        @constraint(m, 1*x[1] + 2*x[2] <= 4 +u*M)
-
-        @constraint(m, 1*x[1] + 0.1*x[2] <= 4 +(1-u)*M)
-        @constraint(m, 0.4*x[1] + 1*x[2] <= 4 +(1-u)*M)
-
-        solveMIP(m)
-        @test m.ext[:status] == :Unbounded
-    end
-    setoutputs!(m,solution,testresult)
-    return solution
-end
-
-
 
 #teste Alocacao de portifolio P1 Andrew e Bianca (Viavel)
 #adicionado por Andrew Rosemberg
@@ -1306,11 +1279,11 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
   #Generate asset prices
 
   srand(82)
-  prices = rand(1:100)+sin(linspace(rand()*pi,numD))+randn(numD)*1
+  prices = rand(1:100)+sin.(linspace(rand()*pi,numD))+randn(numD)*1
 
   for i= 2:numA
     srand(i)
-    prices = [prices rand(1:100)+sin(linspace(rand()*pi,numD))+randn(numD)*i]
+    prices = [prices rand(1:100)+sin.(linspace(rand()*pi,numD))+randn(numD)*i]
   end
   returns= (prices[2:numD,1:numA].-prices[1:numD-1,1:numA])./prices[1:numD-1,1:numA]
   prices = [fill(price_rf, size(prices,1)) prices]
@@ -1396,9 +1369,11 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
            0.0;
            0.0]
 
-        @test x ≈ getValue(X) atol=1E-07
-        @test U_buy ≈ getValue(u_buy) atol=1E-07
-        @test U_sell ≈ getValue(u_sell) atol=1E-07
+
+        @test x ≈ getvalue(X) atol=1E-04
+        @test U_buy ≈ getvalue(u_buy) atol=1E-04
+        @test U_sell ≈ getvalue(u_sell) atol=1E-04
+
     end
     setoutputs!(myModel,solution,testresult)
     return solution
