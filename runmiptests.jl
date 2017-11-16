@@ -55,7 +55,8 @@ testset = [
 
 ]
 
-function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); author = String[], kind = String[], ignore = String[])
+function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); 
+    author = String[], kind = String[], ignore = String[], name = "")
 
     table = MIPSolution[]
     @testset "Main" begin
@@ -67,7 +68,10 @@ function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolve
             end
         end
         mat = table2mat(table)
-        writecsv("result_$(solveMIP)_$(solver).out",mat)
+        if name == ""
+            name = "result_$(solveMIP)_$(solver)"
+        end
+        writecsv(name*".out",mat)
     end
 
     return table
