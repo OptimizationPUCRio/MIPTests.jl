@@ -92,11 +92,11 @@ module SolverBrendon
 
     m.objVal = zinf.resp.obj
     m.colVal = zinf.resp.vars
-    m.objBound =  global_bound
+    m.objBound =  global_bound[1]
 
 
-    m.ext[:nos] = nos_explorados
-    m.ext[:solucao_inteira] = int_sol
+    m.ext[:nos] = size(nos_explorados)[1]
+    m.ext[:solucao_inteira] = size(int_sol)[1]
     m.ext[:status] = zinf.resp.status
     m.ext[:time] = time
 
@@ -130,12 +130,15 @@ module SolverBrendon
 
     if(sum(v_bin)!=0)
       ############################### ###############################
-      iter = 0
-      while (abs(global_bound[2] - global_bound[1]) >= 0.00000005 && size(lista)[1] != 0)
+      iter = 1
+      while (abs(global_bound[2] - global_bound[1]) >= 0.00000005 && size(lista)[1] != 0 && iter<=1000)
           #Seleciona problema  ##########################################
           # ind_prob = #ind do problema selecionado
-          ind_prob = 1
 
+          ind_prob = 1
+          if(global_bound[2]==+Inf)
+            ind_prob = size(lista)[1]
+          end
           ############################### ###############################
 
           #Select variables #############################################
@@ -239,7 +242,7 @@ module SolverBrendon
           if poda_ub == "sucesso"
               push!(lista,novo_ub)
           end
-          iter += 1
+          iter= iter + 1
       end
     end
     if m.objSense == :Max
