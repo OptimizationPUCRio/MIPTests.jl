@@ -53,6 +53,18 @@ testset = [
     (test_rv_8, "RV", "LP-inf"),
     (test_rv_p1, "RV", "MIP-p1"),
 
+    (test1_Bianca, "BL", "LP-opt")
+    (test2_Bianca, "BL", "LP-inf")
+    (test3_MIP_minimal_Bianca, "BL", "MIP-m")
+    (test3_MIP_minimal_Bianca_Infeasible, "BL", "MIP-inf-m")
+    (test4_MIP_pequeno_Bianca, "BL", "MIP-p")
+    (test4_MIP_pequeno_Bianca_Inf, "BL", "MIP-inf-p")
+    (test4_MIP_pequeno_Bianca_Unb, "BL", "MIP-unb")
+    (test4_MIP_medio_Bianca, "BL", "MIP-med")
+    (test5_MIP_medio_dif, "BL", "MIP-med-dif")
+
+
+
 ]
 
 function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); author = String[], kind = String[], ignore = String[])
