@@ -505,6 +505,8 @@ function test3_2(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver
 end
 
 
+
+
 #teste problema 6 da lista modificado 2 (Expansao da Producao Infeasible)
 #adicionado por Andrew Rosemberg
 function test3_3(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -1810,7 +1812,7 @@ end
 # adicionado por Bianca Lacê
 function test4_MIP_pequeno_Bianca(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
-    model = Model(solver = solver)
+    m = Model(solver = solver)
     C=[14  17   7   5  16  21  25  30
      30   8  27  23  21  22  23  25
      15  17  25   4  30  10   5  27
@@ -1844,10 +1846,10 @@ function test4_MIP_pequeno_Bianca(solveMIP::Function, solver::MathProgBase.Abstr
 end
 
 
-
+# adicionado por Bianca Lacê
 function test4_MIP_pequeno_Bianca_Inf(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
-    model = Model(solver = solver)
+    m = Model(solver = solver)
     C=[14  17   7   5  16  21  25  30
      30   8  27  23  21  22  23  25
      15  17  25   4  30  10   5  27
@@ -1867,6 +1869,215 @@ function test4_MIP_pequeno_Bianca_Inf(solveMIP::Function, solver::MathProgBase.A
         @objective(m, :Min, sum(sum(C[i,j]*X[i,j] for j=1:n) for i=1:l))
         solveMIP(m)
         @test m.ext[:status] == :Infeasible
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# adicionado por Bianca Lacê
+function test4_MIP_pequeno_Bianca_Unb(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    C=[14  17   7   5  16  21  25  30
+     30   8  27  23  21  22  23  25
+     15  17  25   4  30  10   5  27
+     17  24  23   2  28  13  21  13
+     17   6  27   8   3  26  19  24
+     19  19  15   2   9  29  14   4
+     10  27  18  14  22  14   1  30
+     23  19  26   9  28  10  25  16]
+    testresult = @testset "Teste atribuição de tarefas" begin
+        l,n=size(C)
+        @variables(m, begin
+          X[1:l,1:n], Bin
+          y >= 0
+        end)
+        @constraints(m, begin
+          constrain[i=1:l], sum(X[i,j] for j=1:n) == 1
+          constrain[j=1:n], sum(X[i,j] for i=1:l) == 1
+          sum(sum(C[i,j]*X[i,j] for j=1:n) for i=1:l) <=45
+        end)
+        @objective(m, :Min, sum(sum(C[i,j]*X[i,j] - y for j=1:n) for i=1:l))
+        solveMIP(m)
+        @test m.ext[:status] == :Unbounded
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# adicionado por Bianca Lacê
+function test4_MIP_medio_Bianca(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    C=[ 18  10  36  17   2  33  28  29  58  46  30  23  17  17  52  28
+     41  56  35   7  44  45  12   2  31  57  29   3  45  30  23   9
+     46  30  28  54  42  11  38  16   2  34  55  45  60  51  50  41
+     33  32  55  55  45  41  12   9  15  39  11  57  18  58  35  60
+      2  18   4  31  19  14  17   4  30  33  32   9  49   4  18  41
+     50   3  29  58  26  48  55  47  51  59  16  16  36  52  37  20
+     30  36   9  18   7  46  51   4  43  43  36  15  54  22   9  13
+     44  58  20  55  21  21  34  56  24  46  31  42  34  57  27  21
+      4  59  17  26  48  60  18  14  54  56   1   2   1  13  55  41
+     13  57  44  52  59   7  18  56  48  15  54  34  21  31  13  19
+     51  25   8  22  54  45   5  31  59  47  49  21  53  55  13  10
+      6  58  44  33  54   7   3   2  46   2  41  12  34  28  42  27
+     21  44  36   1  36   2  19  58  32   1  35  20  31  41   3  31
+      3  60  12  40   7  30  50  21  27  56  48  47  46  53  35  27
+      3  58  28   5   9  53  56  32  22  31  45  30  26  11  20  24
+     44  16  25  30  49  38  39   7  52  57  31   5  55  23  37  16]
+    testresult = @testset "Teste MIP medio" begin
+        l,n=size(C)
+        d=2
+        @variables(m, begin
+          X[1:l,1:n,1:d], Bin
+        end)
+        for k in 1:d
+          @constraint(m,constrain[i=1:n], sum(X[i,j,k] for j=1:l) == 1)
+          @constraint(m,constrain[j=1:l], sum(X[i,j,k] for i=1:n) == 1)
+        end
+        @constraint(m, constrain[j in 1:l, i in 1:n], sum(X[i,j,k] for k=1:d) <= 1)
+        @objective(m, :Min, sum(sum(C[i,j]*(X[i,j,1]+X[i,j,2])  for j=1:n) for i=1:l))
+
+        solveMIP(m)
+
+        @test getobjectivevalue(m) == 229.0
+
+        A=getvalue(X)
+
+        @test A[:,:,1] == [0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0
+         0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0
+         1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0
+         0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1
+         0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0
+         0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0
+         0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0
+         0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0]
+
+        @test A[:,:,2] == [0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0
+         0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0
+         0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0
+         0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1
+         0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0
+         1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0]
+
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# adicionado por Bianca Lacê
+function test5_MIP_medio_dif(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    C=[ 18  10  36  17   2  33  28  29  58  46  30  23  17  17  52  28
+     41  56  35   7  44  45  12   2  31  57  29   3  45  30  23   9
+     46  30  28  54  42  11  38  16   2  34  55  45  60  51  50  41
+     33  32  55  55  45  41  12   9  15  39  11  57  18  58  35  60
+      2  18   4  31  19  14  17   4  30  33  32   9  49   4  18  41
+     50   3  29  58  26  48  55  47  51  59  16  16  36  52  37  20
+     30  36   9  18   7  46  51   4  43  43  36  15  54  22   9  13
+     44  58  20  55  21  21  34  56  24  46  31  42  34  57  27  21
+      4  59  17  26  48  60  18  14  54  56   1   2   1  13  55  41
+     13  57  44  52  59   7  18  56  48  15  54  34  21  31  13  19
+     51  25   8  22  54  45   5  31  59  47  49  21  53  55  13  10
+      6  58  44  33  54   7   3   2  46   2  41  12  34  28  42  27
+     21  44  36   1  36   2  19  58  32   1  35  20  31  41   3  31
+      3  60  12  40   7  30  50  21  27  56  48  47  46  53  35  27
+      3  58  28   5   9  53  56  32  22  31  45  30  26  11  20  24
+     44  16  25  30  49  38  39   7  52  57  31   5  55  23  37  16]
+    testresult = @testset "Teste MIP medio" begin
+        l,n=size(C)
+        d=2
+        @variables(m, begin
+          X[1:l,1:n,1:d], Bin
+          Y[1:l,1:n] >=0
+        end)
+        for k in 1:d
+          @constraint(m,constrain[i=1:n], sum(X[i,j,k] for j=1:l) == 1)
+          @constraint(m,constrain[j=1:l], sum(X[i,j,k] for i=1:n) == 1)
+        end
+        @constraint(m, constrain[j in 1:l, i in 1:n], sum(X[i,j,k] for k=1:d) <= 1)
+        @constraint(m, constrain[j in 1:l, i in 1:n], Y[i,j] >= X[i,j,1]*50 )
+        @constraint(m, constrain[j in 1:l, i in 1:n], Y[i,j] >= X[i,j,2]*C[i,j] )
+        @objective(m, :Min, sum(sum(C[i,j]*Y[i,j] for j=1:n) for i=1:l))
+
+        solveMIP(m)
+
+        @test getobjectivevalue(m) == 6257.0
+
+        A=getvalue(X)
+
+        @test A[:,:,1] == [ 0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0
+          0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0
+          0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0
+          0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0
+          0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0
+          0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+          0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0
+          0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1
+          0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0
+          0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0
+          0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0
+          0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0
+          0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0
+          1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+          0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0
+          0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0]
+
+        @test A[:,:,2] == [0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0
+         1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0
+         0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1
+         0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0
+         0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0
+         0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0
+         0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0]
+
+        @test getvalue(Y) == [0  10   0   0  50   0   0   0   0   0   0   0   0   0   0   0
+          0   0   0   7   0   0   0  50   0   0   0   0   0   0   0   0
+          0   0   0   0   0  11   0   0  50   0   0   0   0   0   0   0
+          0   0   0   0   0   0   0   0  15   0  50   0   0   0   0   0
+          2   0   0   0   0   0   0   0   0   0   0   0   0  50   0   0
+          0  50   0   0   0   0   0   0   0   0   0  16   0   0   0   0
+          0   0  50   0   0   0   0   0   0   0   0   0   0   0   9   0
+          0   0  20   0   0   0   0   0   0   0   0   0   0   0   0  50
+          0   0   0   0   0   0   0   0   0   0   1   0  50   0   0   0
+          0   0   0   0   0  50   0   0   0   0   0   0  21   0   0   0
+          0   0   0   0   0   0  50   0   0   0   0   0   0   0   0  10
+          0   0   0   0   0   0   3   0   0  50   0   0   0   0   0   0
+          0   0   0   0   0   0   0   0   0   1   0   0   0   0  50   0
+         50   0   0   0   7   0   0   0   0   0   0   0   0   0   0   0
+          0   0   0  50   0   0   0   0   0   0   0   0   0  11   0   0
+          0   0   0   0   0   0   0   7   0   0   0  50   0   0   0   0]
 
     end
     setoutputs!(m,solution,testresult)
