@@ -41,7 +41,7 @@ testset = [
     (teste_PL_andrew_inviavel, "AR", "LP-inf"),
 
     (test_P1_Andrew_Bianca_viavel, "AR", "MIP-g1"),
-    
+
 
     (test_rv_1, "RV", "MIP-pp"),
     (test_rv_3, "RV", "MIP-p"),
@@ -56,11 +56,11 @@ testset = [
 ]
 
 function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); author = String[], kind = String[], ignore = String[])
-
     table = MIPSolution[]
     @testset "Main" begin
         for teste in testset
             if !("$(teste[1])" in ignore) && (isempty(author) || teste[2] in author) && (isempty(kind) || teste[3] in kind)
+                println("$(teste[1])")
                 line = teste[1](solveMIP, solver)
                 line.name = "$(teste[1]) - $(teste[2])"
                 push!(table, line)
