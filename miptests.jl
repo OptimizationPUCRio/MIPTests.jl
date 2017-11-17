@@ -1662,3 +1662,63 @@ function test_MIP_Medio_Brito(solveMIP::Function, solver::MathProgBase.AbstractM
     setoutputs!(m,solution,testresult)
     return solution
 end
+
+# teste MIP (infeasible ~ 5 binarias)
+# adicionado por Eduardo Brito
+function test_MIP_Infeasible_Minimal_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    @variable(m, y[i = 1:5], Bin)
+    @constraint(m, sum(y) <= -1)
+
+    @objective(m, :Max, 0)
+
+    solveMIP(m)
+
+    testresult = @testset "MIP infeasible minimal" begin
+        @test m.ext[:status] in [:Infeasible, :InfeasibleOrUnbounded]
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# teste MIP (infeasible ~ 50 binarias)
+# adicionado por Eduardo Brito
+function test_MIP_Infeasible_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    @variable(m, y[i = 1:45], Bin)
+    @constraint(m, sum(y[i] for i in 1:22) <= 0.1)
+    @constraint(m, sum(y[i] for i in 23:45) >= 0.9)
+    @constraint(m, sum(y[i] for i in 1:22) >= sum(y[i] for i in 23:45))
+    @objective(m, :Max, 0)
+
+    solveMIP(m)
+    testresult = @testset "MIP infeasible pequeno" begin
+        @test m.ext[:status] in [:Infeasible, :InfeasibleOrUnbounded]
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+# teste MIP (unbounded)
+# adicionado por Eduardo Brito
+function test_MIP_unbounded_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    @variable(m, y[i = 1:2], Bin)
+    @variable(m, x[i = 1:2] >= 0)
+
+    @constraint(m, x[1] <= 1000*y[1])
+
+    @objective(m, Max, sum(x))
+
+    @solveMIP(m)
+
+    testresult = @testset "MIP unbounded" begin
+        @test m.ext[:status] in [:Unbounded, :InfeasibleOrUnbounded]
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
