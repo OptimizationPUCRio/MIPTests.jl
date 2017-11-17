@@ -89,3 +89,32 @@ function test2_Bianca(solveMIP::Function, solver::MathProgBase.AbstractMathProgS
     setoutputs!(m,solution,testresult)
     return solution
 end
+
+
+# adicionado por Bianca Lacê
+function test3_MIP_minimal_Bianca(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    model = Model(solver = solver)
+    c=[1 ; 1 ; 3 ; 3 ; 2]
+    M=15
+    k=3
+    testresult = @testset "Teste MIP minimo" begin
+        n = length(c)
+        @variables(model, begin
+          z[j=1:n], Bin
+          y[i=1:n] >= 0
+        end)
+        @constraint(model,  constrain[i=1:n], y[i]>= z[i]*M)
+        @constraint(model,  sum(z[j] for j=1:n) == k)
+        @objective(model, Min, sum(c[i]*y[i] for i=1:n))
+
+        solveMIP(model)
+
+        @test getobjectivevalue(model) == 60
+        @test getvalue(z) == [1.00;1.00;0.00;0.00;1.00]
+        @test getvalue(y) == [15.0;15.0;0.00;0.00;15.0]
+
+    end
+    setoutputs!(model,solution,testresult)
+    return solution
+end
