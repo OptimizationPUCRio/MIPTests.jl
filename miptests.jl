@@ -18,19 +18,31 @@ end
 
 function setoutputs!(m,sol::MIPSolution, test)
     sol.pass = length(test.results) == 0
-    sol.objective = getobjectivevalue(m)
-    sol.bestbound = m.objBound
+    if typeof(getobjectivevalue(m)) <: Real
+        sol.objective = getobjectivevalue(m)
+    end
+    if typeof(m.objBound) <: Real
+        sol.bestbound = m.objBound
+    end
     if haskey(m.ext,:time)
-        sol.time = m.ext[:time]
+        if typeof(m.ext[:time]) <: Real
+            sol.time = m.ext[:time]
+        end
     end
     if haskey(m.ext,:nodes)
-        sol.nodes = m.ext[:nodes]
+        if typeof(m.ext[:nodes]) <: Integer
+            sol.nodes = m.ext[:nodes]
+        end
     end
     if haskey(m.ext,:intsols)
-        sol.intsols = m.ext[:intsols]
+        if typeof(m.ext[:time]) <: Integer
+            sol.intsols = m.ext[:intsols]
+        end
     end
     if haskey(m.ext,:status)
-        sol.status = m.ext[:status]
+        if typeof(m.ext[:time]) <: Symbol          
+            sol.status = m.ext[:status]
+        end
     end
     return nothing
 end
