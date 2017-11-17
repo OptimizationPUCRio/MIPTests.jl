@@ -1778,3 +1778,97 @@ function test3_MIP_minimal_Bianca(solveMIP::Function, solver::MathProgBase.Abstr
     setoutputs!(model,solution,testresult)
     return solution
 end
+
+# adicionado por Bianca Lacê
+function test3_MIP_minimal_Bianca_Infeasible(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    model = Model(solver = solver)
+    c=[1 ; 1 ; 3 ; 3 ; 2]
+    M=15
+    k=3
+    testresult = @testset "Teste MIP minimo Infeasible" begin
+        n = length(c)
+        @variables(model, begin
+          z[j=1:n], Bin
+          y[i=1:n] >= 0
+        end)
+        @constraint(model,  constrain[i=1:n], y[i]>= z[i]*M)
+        @constraint(model,  sum(z[j] for j=1:n) == k)
+        @constraint(model,  sum(y[i] for i=1:n) <= 40)
+        @objective(model, Min, sum(c[i]*y[i] for i=1:n))
+
+        solveMIP(model)
+
+        @test model.ext[:status] == :Infeasible
+
+    end
+    setoutputs!(model,solution,testresult)
+    return solution
+end
+
+# teste problema de atribuição de tarefas pequeno
+# adicionado por Bianca Lacê
+function test4_MIP_pequeno_Bianca(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    model = Model(solver = solver)
+    C=[14  17   7   5  16  21  25  30
+     30   8  27  23  21  22  23  25
+     15  17  25   4  30  10   5  27
+     17  24  23   2  28  13  21  13
+     17   6  27   8   3  26  19  24
+     19  19  15   2   9  29  14   4
+     10  27  18  14  22  14   1  30
+     23  19  26   9  28  10  25  16]
+    testresult = @testset "Teste atribuição de tarefas" begin
+        l,n=size(C)
+        @variable(m, X[1:l,1:n], Bin)
+        @constraints(m, begin
+          constrain[i=1:l], sum(X[i,j] for j=1:n) == 1
+          constrain[j=1:n], sum(X[i,j] for i=1:l) == 1
+        end)
+        @objective(m, :Min, sum(sum(C[i,j]*X[i,j] for j=1:n) for i=1:l))
+        solveMIP(m)
+        @test getobjectivevalue(m) == 49
+        @test getvalue(X) == [ 0.0  -0.0   1.0  -0.0  -0.0  -0.0  -0.0  -0.0
+         -0.0   1.0  -0.0  -0.0  -0.0  -0.0  -0.0  -0.0
+         -0.0  -0.0  -0.0   0.0  -0.0  -0.0   1.0  -0.0
+         -0.0  -0.0  -0.0   1.0  -0.0  -0.0  -0.0  -0.0
+         -0.0  -0.0  -0.0  -0.0   1.0  -0.0  -0.0  -0.0
+         -0.0  -0.0  -0.0   0.0  -0.0  -0.0  -0.0   1.0
+          1.0  -0.0  -0.0  -0.0  -0.0  -0.0   0.0  -0.0
+         -0.0  -0.0  -0.0   0.0  -0.0   1.0  -0.0  -0.0]
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+
+function test4_MIP_pequeno_Bianca_Inf(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    model = Model(solver = solver)
+    C=[14  17   7   5  16  21  25  30
+     30   8  27  23  21  22  23  25
+     15  17  25   4  30  10   5  27
+     17  24  23   2  28  13  21  13
+     17   6  27   8   3  26  19  24
+     19  19  15   2   9  29  14   4
+     10  27  18  14  22  14   1  30
+     23  19  26   9  28  10  25  16]
+    testresult = @testset "Teste atribuição de tarefas" begin
+        l,n=size(C)
+        @variable(m, X[1:l,1:n], Bin)
+        @constraints(m, begin
+          constrain[i=1:l], sum(X[i,j] for j=1:n) == 1
+          constrain[j=1:n], sum(X[i,j] for i=1:l) == 1
+          sum(sum(C[i,j]*X[i,j] for j=1:n) for i=1:l) <=45
+        end)
+        @objective(m, :Min, sum(sum(C[i,j]*X[i,j] for j=1:n) for i=1:l))
+        solveMIP(m)
+        @test m.ext[:status] == :Infeasible
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
