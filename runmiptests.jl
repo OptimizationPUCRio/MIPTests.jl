@@ -1,9 +1,14 @@
 include("miptests.jl")
+using JuMP, Gurobi
+
+solver = GurobiSolver(OutputFlag=0)
 
 testset = [
     (test1, "JG", "Example"),
 
     (test2, "GB", "MIP-p"),
+<<<<<<< HEAD
+=======
     (test_P1_Guilherme, "GB", "MIP-g1"),
     (test_PL_Infeasible_Guilherme, "GB", "MIP-inf-p"),
     (test_MIP_medio_Guilherme, "GB", "MIP-m"),
@@ -13,6 +18,7 @@ testset = [
     (test_MIP_Infeasible_Minimal_Guilherme, "GB", "MIP-inf-m"),
     (test_MIP_Infeasible_Pequeno_Guilherme, "GB", "MIP-inf-m"),
     (test_PL_Guilherme, "GB", "LP-p"),
+>>>>>>> 5cf3e2db61752cae158754bc18593cadc08051b9
 
     (test_P1_Brito, "EB", "MIP-g1"),
     (test_PL_Simples_Brito, "EB", "LP-p"),

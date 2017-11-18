@@ -1371,7 +1371,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
             0.0;
             0.0]
         U_buy2 = [0.0; 15.0; 7.0; 0.0; 9.0; 0.0; 0.0]
-        
+
         U_sell = [
             255.0;
             0.0;
@@ -1383,9 +1383,9 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
         U_sell2 = [31.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0]
 
 
-        @test norm(x - getvalue(X)) < 1e-4 || norm(x2 - getvalue(X))  < 1e-4 
-        @test norm(U_buy - getvalue(u_buy)) < 1e-4  || norm(U_buy2 - getvalue(u_buy) )< 1e-4 
-        @test norm(U_sell - getvalue(u_sell))< 1e-4  || norm(U_sell2 - getvalue(u_sell) ) < 1e-4 
+        @test norm(x - getvalue(X)) < 1e-4 || norm(x2 - getvalue(X))  < 1e-4
+        @test norm(U_buy - getvalue(u_buy)) < 1e-4  || norm(U_buy2 - getvalue(u_buy) )< 1e-4
+        @test norm(U_sell - getvalue(u_sell))< 1e-4  || norm(U_sell2 - getvalue(u_sell) ) < 1e-4
 
     end
     setoutputs!(myModel,solution,testresult)
@@ -1819,6 +1819,113 @@ function test_PL_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
         @objective(m, Min, sum(x[i] for i=1:50))
         solveMIP(m)
         @test m.objVal == 30
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+# teste MIP (Medio ~500 binarias) ULS Uncapacited Lot-Sizing
+# adicionado por Eduardo Brito
+function test_MIP_Medio_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    M = exp10(3)
+    C = 3*exp10(2)
+    T = 5*24 #Tempo
+    P = 4 # Quantidade de Produtos
+    p = randn(srand(1), (P,T))
+    h = randn(srand(2), (P,T))
+    f = randn(srand(3), (P,T))
+    d = randn(srand(4), (P,T))
+
+    @variable(m, x[p = 1:P,t = 1:T] >= 0)
+    @variable(m, y[p = 1:P,t = 1:T], Bin)
+    @variable(m, s[p = 1:P,t = 1:T] >= 0)
+
+    @constraints(m, begin
+    cont_0[p = 1:P,t = 1], 0 + x[p,t] == d[p,t] + s[p,t]
+    continuidade[p = 1:P, t = 2:T], s[p,t-1] + x[p,t] == d[p,t] + s[p,t]
+    producao[p = 1:P, t = 1:T], x[p,t] <= M*y[p,t]
+    estoque[t = 1:T], sum(s[p,t] for p = 1:P) <= C
+    end)
+
+    @objective(m, :Min, sum(p.*x) + sum(h.*s) + sum(f.*y))
+
+    SolveMIP(m)
+
+    if true
+        resp_x = [0.0 0.0 0.0 1.66533e-16 0.0 0.00207659 1.11022e-16 0.0 0.0 0.0 5.55112e-17 0.0 0.0 2.22045e-16 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.11022e-15 0.0 2.77556e-16 0.0 1.66533e-16 0.0 0.0 0.0 0.0 8.32667e-16 0.0 0.0 0.0 6.66134e-16 0.0 8.88178e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 3.88578e-16 0.0 1.77636e-15 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 2.22045e-16 1.33227e-15 0.0 0.0 0.0 0.0 1.66533e-15 0.0 0.0 0.0 1.44329e-15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 8.88178e-16 3.55271e-15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 5.2458e-15; 0.0 0.0 0.0 2.13552 3.87395 0.0 0.0 0.0 0.0 5.49945 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 4.44089e-16 0.0 0.0 4.996e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 4.44089e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 8.88178e-16 0.0 0.0 4.996e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 0.0 7.21645e-16 0.0 0.0 2.22045e-16 1.42109e-14; 3.74283 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.22045e-16 2.22045e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 278.149 0.0 0.0 3.4972e-14 0.0 0.0 0.0 0.0 0.0 1.9984e-15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 3.59712e-14 0.0 0.0 0.0 0.0 0.0 8.65974e-15 0.0 7.77156e-15 2.49523e-14 0.0 0.0 0.0 0.0 0.0 0.0 1.77636e-14 0.0 0.0 0.0 0.0 0.0 1.82077e-14 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.66454e-15 0.0 0.0 0.0 0.0 0.0 0.0 4.88498e-15 1.16018e-14 0.0 0.0 0.0 0.0 0.0 0.0 1.28786e-14 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 6.66134e-16 0.0 0.0 0.0; 0.924835 0.0 0.0 0.0 0.0 0.0 3.33067e-16 0.0 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 4.52159 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 2.22045e-16 0.0 0.0 0.0 0.0 0.0 1.66533e-16 0.0 0.0 0.0 0.0 0.0 0.0 0.0 5.55112e-17 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 3.33067e-16 0.0 0.0 0.0 0.0 0.0 0.0 2.22045e-16 0.0 0.0 2.22045e-16 0.0 2.22045e-16 8.88178e-16 0.0 0.0 6.66134e-16 0.0 1.77636e-15 0.0 0.0 0.0 0.0 0.0 5.55112e-17 2.22045e-16 2.22045e-16 0.0 0.980306 0.0 0.0 0.0 5.31387 0.0 0.0 0.0 1.71772 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 5.34778 1.4819]
+
+        resp_y = [0.0 1.0 0.0 1.0 0.0 1.0 1.0 -0.0 0.0 -0.0 1.0 -0.0 -0.0 1.0 1.0 0.0 1.0 1.0 1.0 1.0 0.0 1.0 -0.0 -0.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0 1.0 0.0 1.0 -0.0 0.0 1.0 1.0 0.0 1.0 -0.0 0.0 1.0 0.0 0.0 0.0 1.0 1.0 -0.0 -0.0 1.0 1.0 1.0 1.0 1.0 1.0 0.0 -0.0 -0.0 0.0 1.0 1.0 1.0 1.0 0.0 1.0 1.0 0.0 1.0 -0.0 1.0 0.0 0.0 0.0 1.0 1.0 -0.0 -0.0 1.0 0.0 1.0 1.0 0.0 1.0 0.0 1.0 1.0 0.0 0.0 0.0 0.0 -0.0 -0.0 0.0 1.0 1.0 -0.0 -0.0 0.0 1.0 1.0 -0.0 1.0 1.0 0.0 1.0 -0.0 0.0 1.0 0.0 -0.0 -0.0 -0.0 -0.0 1.0 1.0 1.0 1.0 1.0; 1.0 1.0 -0.0 1.0 1.0 1.0 -0.0 0.0 1.0 1.0 0.0 1.0 -0.0 1.0 1.0 1.0 -0.0 -0.0 -0.0 1.0 0.0 0.0 -0.0 1.0 0.0 -0.0 1.0 1.0 1.0 1.0 0.0 -0.0 0.0 0.0 0.0 0.0 1.0 0.0 1.0 1.0 -0.0 -0.0 0.0 1.0 -0.0 -0.0 0.0 1.0 -0.0 0.0 1.0 -0.0 0.0 1.0 0.0 1.0 -0.0 0.0 1.0 -0.0 -0.0 -0.0 0.0 0.0 1.0 0.0 1.0 0.0 0.0 1.0 -0.0 1.0 1.0 -0.0 0.0 1.0 1.0 0.0 1.0 1.0 -0.0 0.0 1.0 1.0 -0.0 0.0 1.0 1.0 1.0 -0.0 -0.0 -0.0 -0.0 -0.0 0.0 1.0 1.0 0.0 1.0 1.0 1.0 -0.0 1.0 1.0 0.0 1.0 1.0 1.0 0.0 1.0 0.0 -0.0 0.0 -0.0 0.0 1.0 0.0 1.0 1.0 1.0; 1.0 -0.0 0.0 1.0 1.0 1.0 -0.0 1.0 -0.0 1.0 -0.0 1.0 1.0 0.0 1.0 1.0 -0.0 1.0 1.0 1.0 0.0 1.0 0.0 0.0 1.0 0.0 0.0 1.0 -0.0 1.0 1.0 -0.0 0.0 1.0 1.0 1.0 1.0 1.0 0.0 1.0 1.0 0.0 1.0 0.0 1.0 -0.0 0.0 1.0 -0.0 -0.0 -0.0 0.0 -0.0 0.0 1.0 1.0 -0.0 -0.0 1.0 -0.0 1.0 1.0 1.0 1.0 -0.0 1.0 1.0 0.0 1.0 -0.0 1.0 0.0 0.0 1.0 1.0 1.0 1.0 1.0 1.0 -0.0 0.0 0.0 0.0 0.0 -0.0 -0.0 -0.0 0.0 1.0 -0.0 1.0 -0.0 -0.0 1.0 1.0 -0.0 1.0 1.0 1.0 -0.0 1.0 1.0 1.0 1.0 0.0 1.0 0.0 1.0 0.0 1.0 0.0 -0.0 -0.0 -0.0 0.0 1.0 1.0 0.0 0.0 1.0; 1.0 1.0 1.0 1.0 1.0 0.0 1.0 0.0 -0.0 0.0 1.0 1.0 1.0 0.0 -0.0 0.0 -0.0 0.0 1.0 1.0 1.0 -0.0 -0.0 -0.0 -0.0 0.0 1.0 -0.0 -0.0 1.0 -0.0 1.0 1.0 0.0 1.0 1.0 0.0 1.0 0.0 1.0 1.0 1.0 1.0 0.0 1.0 1.0 -0.0 0.0 1.0 -0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.0 1.0 -0.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 1.0 0.0 1.0 1.0 1.0 0.0 0.0 1.0 1.0 0.0 1.0 1.0 1.0 1.0 -0.0 0.0 1.0 0.0 1.0 0.0 0.0 0.0 -0.0 0.0 1.0 1.0 1.0 0.0 1.0 1.0 -0.0 0.0 1.0 -0.0 -0.0 0.0 1.0 0.0 -0.0 -0.0 1.0 0.0 -0.0 -0.0 -0.0 0.0 1.0 0.0 1.0 -0.0 0.0 1.0 1.0]
+    end
+
+
+    testresult = @testset "MIP Medio" begin
+    @test m.ext[:status] == :Optimal
+    @test abs.(getvalue(x)) ≈ abs.(resp_x) atol = exp10(-3)
+    @test abs.(getvalue(y)) ≈ abs.(resp_y) atol = exp10(-3)
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# teste MIP (infeasible ~ 5 binarias)
+# adicionado por Eduardo Brito
+function test_MIP_Infeasible_Minimal_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    @variable(m, y[i = 1:5], Bin)
+    @constraint(m, sum(y) <= -1)
+
+    @objective(m, :Max, 0)
+
+    solveMIP(m)
+
+    testresult = @testset "MIP infeasible minimal" begin
+        @test m.ext[:status] in [:Infeasible, :InfeasibleOrUnbounded]
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# teste MIP (infeasible ~ 50 binarias)
+# adicionado por Eduardo Brito
+function test_MIP_Infeasible_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    @variable(m, y[i = 1:45], Bin)
+    @constraint(m, sum(y[i] for i in 1:22) <= 0.1)
+    @constraint(m, sum(y[i] for i in 23:45) >= 0.9)
+    @constraint(m, sum(y[i] for i in 1:22) >= sum(y[i] for i in 23:45))
+    @objective(m, :Max, 0)
+
+    solveMIP(m)
+    testresult = @testset "MIP infeasible pequeno" begin
+        @test m.ext[:status] in [:Infeasible, :InfeasibleOrUnbounded]
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+# teste MIP (unbounded)
+# adicionado por Eduardo Brito
+function test_MIP_unbounded_Brito(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver=solver)
+    @variable(m, y[i = 1:2], Bin)
+    @variable(m, x[i = 1:2] >= 0)
+
+    @constraint(m, x[1] <= 1000*y[1])
+
+    @objective(m, Max, sum(x))
+
+    @solveMIP(m)
+
+    testresult = @testset "MIP unbounded" begin
+        @test m.ext[:status] in [:Unbounded, :InfeasibleOrUnbounded]
     end
     setoutputs!(m,solution,testresult)
     return solution
