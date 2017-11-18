@@ -3,14 +3,14 @@ using MathProgBase
 using Base.Test
 
 type MIPSolution
-    name::String
-    pass::Bool
-    objective::Float64
-    bestbound::Float64
-    time::Float64
-    nodes::Int
-    intsols::Int
-    status::Symbol
+    name
+    pass
+    objective
+    bestbound
+    time
+    nodes
+    intsols
+    status
     function MIPSolution()
         new("",false,NaN,NaN,Inf,-1,-1,:unsolved)
     end
@@ -18,31 +18,29 @@ end
 
 function setoutputs!(m,sol::MIPSolution, test)
     sol.pass = length(test.results) == 0
-    if typeof(getobjectivevalue(m)) <: Real
-        sol.objective = getobjectivevalue(m)
-    end
-    if typeof(m.objBound) <: Real
-        sol.bestbound = m.objBound
-    end
+    sol.objective = getobjectivevalue(m)
+    sol.bestbound = m.objBound
     if haskey(m.ext,:time)
-        if typeof(m.ext[:time]) <: Real
-            sol.time = m.ext[:time]
-        end
+        sol.time = m.ext[:time]
     end
     if haskey(m.ext,:nodes)
-        if typeof(m.ext[:nodes]) <: Integer
-            sol.nodes = m.ext[:nodes]
-        end
+        sol.nodes = m.ext[:nodes]
+    end
+    if haskey(m.ext,:node)
+        sol.nodes = m.ext[:node]
     end
     if haskey(m.ext,:intsols)
-        if typeof(m.ext[:time]) <: Integer
-            sol.intsols = m.ext[:intsols]
-        end
+        sol.intsols = m.ext[:intsols]
     end
+    if haskey(m.ext,:solucao_inteira)
+        sol.intsols = m.ext[:solucao_inteira]
+    end
+    if haskey(m.ext,:solutions)
+        sol.intsols = m.ext[:solutions]
+    end
+    
     if haskey(m.ext,:status)
-        if typeof(m.ext[:time]) <: Symbol          
             sol.status = m.ext[:status]
-        end
     end
     return nothing
 end
