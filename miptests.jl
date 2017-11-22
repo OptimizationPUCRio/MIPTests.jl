@@ -357,7 +357,7 @@ function test_MIP_Pequeno_Brito(solveMIP::Function, solver::MathProgBase.Abstrac
     return solution
 end
 
-# teste n-K robusto - trabalho da P1 - caso com 10 geradores e K = 2
+# teste n-K robusto - trabalho da P1 - caso com 10 geradores, 24 horas e K = 1
 # adicionado por Raphael Saavedra
 function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
@@ -384,7 +384,7 @@ function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathPro
     SU = RU # startup ramp limit
     #------------------------------------------------------------------------------
     m = Model(solver = solver)
-    testresult = @testset "Teste Robust n-K Unit Commitment" begin
+    testresult = @testset "Teste Robust UC / n-2 / 10 geradores / 24 horas" begin
         # Model formulation
         #----------------------------------------------------------------------------
         # Variables
@@ -431,6 +431,85 @@ function testRobustCCUC(solveMIP::Function, solver::MathProgBase.AbstractMathPro
         @test getvalue(v[:,1]) ≈ [1; zeros(9)]
         @test getvalue(v[:,4]) ≈ [1; zeros(4); 1; zeros(4)]
         @test sum(getvalue(v)) ≈ 43
+
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+# teste n-K robusto - caso com 5 geradores, 12 horas e K = 1
+# adicionado por Raphael Saavedra
+function testRobustCCUC_reduced(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    #------------------------------------------------------------------------------
+    # Parameters
+    T = collect(1:12) # periods
+    N = collect(1:5) # generators
+    p0 = zeros(10) # initial power output
+    v0 = zeros(10) # initial on/off state
+    D = 0.5*[700; 750; 850; 950; 1000; 1100; 1150; 1200; 1300; 1400; 1450; 1500; 1400;
+                1300; 1200; 1050; 1000; 1100; 1200; 1400; 1300; 1100; 900; 800] # demand
+    K = 1 # n-K security criterion
+    Cf = [1000; 970; 700; 680; 450] # fixed cost
+    Cl = [16.19; 17.26; 16.6; 16.5; 19.7] # linear cost
+    Cs = 0.08*Cl # spinning reserve cost
+    Cns = 0.1*Cl # non-spinning reserve cost
+    Pmax = [455; 455; 130; 130; 162] # generator capacity
+    Pmin = [150; 150; 20; 20; 25] # minimum power output
+    RSmax = Pmax # maximum spinning reserve
+    RNSmax = Pmax # maximum non-spinning reserve
+    RD = Pmax # ramp-down limit
+    RU = Pmax # ramp-up limit
+    SD = RD # shutdown ramp limit
+    SU = RU # startup ramp limit
+    #------------------------------------------------------------------------------
+    m = Model(solver = solver)
+    testresult = @testset "Teste Robust UC / n-1 / 5 geradores / 12 horas" begin
+        # Model formulation
+        #----------------------------------------------------------------------------
+        # Variables
+        @variable(m, p[1:N[end], 1:T[end]] >= 0) # power output
+        @variable(m, v[1:N[end], 1:T[end]], Bin) # 1 if generator is on, 0 otherwise
+        @variable(m, 0 <= rs[i = 1:N[end], 1:T[end]] <= RSmax[i]) # spinning reserve
+        @variable(m, rns[1:N[end], 1:T[end]] >= 0) # non-spinning reserve
+        @variable(m, vns[1:N[end], 1:T[end]], Bin) # 1 if generator provides non-spinning reserve, 0 otherwise
+        @variable(m, y[1:T[end]] >= 0) # dual variable of the n-K constraint
+        @variable(m, z[1:N[end], 1:T[end]] >= 0) # dual variable of the upper bound
+        #----------------------------------------------------------------------------
+        # Constraints
+        @constraint(m, [t in T], sum(p[i,t] for i in N) == D[t])
+        @constraint(m, [t in T, i in N], p[i,t] >= Pmin[i]*v[i,t])
+        @constraint(m, [t in T, i in N], p[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [t in T, i in N], p[i,t] + rs[i,t] <= Pmax[i]*v[i,t])
+        @constraint(m, [t in T, i in N], rns[i,t] >= Pmin[i]*vns[i,t])
+        @constraint(m, [t in T, i in N], rns[i,t] <= RNSmax[i]*vns[i,t])
+        @constraint(m, [t in T, i in N], v[i,t] + vns[i,t] <= 1)
+        @constraint(m, [t in 2:T[end], i in N], p[i,t-1] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v[i,t-1]-v[i,t]) + Pmax[i]*(1-v[i,t-1]))
+        @constraint(m, [t in 2:T[end], i in N], p[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 2:T[end], i in N], p[i,t] + rs[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + SU[i]*(v[i,t]-v[i,t-1]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 2:T[end], i in N], rns[i,t] <= p[i,t-1] + RU[i]*v[i,t-1] + RNSmax[i]*(1-v[i,t-1]))
+        @constraint(m, [t in 2:T[end], i in N], rns[i,t] <= SU[i]*(vns[i,t]-v[i,t-1]) + RNSmax[i]*(1-(vns[i,t]-v[i,t-1])))
+        @constraint(m, [t in T], (N[end]-K)*y[t] - sum(z[i,t] for i in N) >= D[t])
+        @constraint(m, [t in T, i in N], y[t] - z[i,t] <= p[i,t] + rs[i,t] + rns[i,t])
+
+        # Constraints regarding initial state
+        @constraint(m, [t in 1, i in N], p0[i] <= p[i,t] + RD[i]*v[i,t] + SD[i]*(v0[i]-v[i,t]) + Pmax[i]*(1-v0[i]))
+        @constraint(m, [t in 1, i in N], p[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 1, i in N], p[i,t] + rs[i,t] <= p0[i] + RU[i]*v0[i] + SU[i]*(v[i,t]-v0[i]) + Pmax[i]*(1-v[i,t]))
+        @constraint(m, [t in 1, i in N], rns[i,t] <= p0[i] + RU[i]*v0[i] + RNSmax[i]*(1-v0[i]))
+        @constraint(m, [t in 1, i in N], rns[i,t] <= SU[i]*(vns[i,t]-v0[i]) + RNSmax[i]*(1-(vns[i,t]-v0[i])))
+        #----------------------------------------------------------------------------
+        # Objective function
+        @objective(m, Min, sum(Cf[i]*v[i,t] for i in N, t in T) + sum(Cl[i]*p[i,t] for i in N, t in T) +
+                                sum(Cs[i]*rs[i,t] for i in N, t in T) + sum(Cns[i]*rns[i,t] for i in N, t in T))
+        #------------------------------------------------------------------------------
+        solveMIP(m)
+
+        @test getobjectivevalue(m) ≈ 137035.322 rtol=1e-2
+        @test getvalue(p[:,12]) ≈ [455; 295; 0; 0; 0]
+        @test getvalue(v[1,:]) ≈ ones(12)
+        @test getvalue(v[:,4]) ≈ [1; zeros(3); 1]
+        @test sum(getvalue(v)) ≈ 21
 
     end
     setoutputs!(m,solution,testresult)
@@ -1323,11 +1402,11 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
   for i = 2:numA
     r_bar_t[i] = mean(returns[:,i])
   end
-  
+
   #######################################################
-  myModel = Model(solver = solver)                                          
+  myModel = Model(solver = solver)
   testresult = @testset "Alocacao de portifolio Viavel" begin
-        
+
         # Decision variables
         @variable(myModel, X[1:numA]>=0)
         @variable(myModel, u_buy[1:numA]>=0 )  #Int
@@ -1398,7 +1477,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
 
         @test x ≈ getValue(X) atol=1E-07
         @test U_buy ≈ getValue(u_buy) atol=1E-07
-        @test U_sell ≈ getValue(u_sell) atol=1E-07      
+        @test U_sell ≈ getValue(u_sell) atol=1E-07
     end
     setoutputs!(myModel,solution,testresult)
     return solution
@@ -1406,12 +1485,12 @@ end
 
 #--------------------------
 
-#adicionado por Rodrigo Villas                                                                         
+#adicionado por Rodrigo Villas
 function test_rv_p1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
-    m = Model(solver = solver)                       
-   
-    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin           
+    m = Model(solver = solver)
+
+    testresult =@testset "Bagulhão da P1 (não me pergunte pq)" begin
 
         QtdComp = 3
         Pcomp = [20 8 7]
@@ -1529,47 +1608,14 @@ function test_rv_p1(solveMIP::Function, solver::MathProgBase.AbstractMathProgSol
         end)
         @objective(m, Max, sum(cstd[j]*x[j] for j=1:QtdComp+2)+sum(cstd[k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(cstd[h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(cstd[u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre))
 
-            
+
         sol = solveMIP(m)
-        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)    
+        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)
         # vc tem que produzir 4.5, confiram
-    end                    
-=======
-
-        #Ordem: Gvc G1 G2 G3 Spot PIvc PI1 PI2 PI3 z1 z2 z3 w1 w2 w3 x1 x2 x3 y1 y2 y3 #
-        c = [Pmin-custo; zeros(QtdComp+1,1); Qmin; zeros(QtdComp,1); deltasPreço' ;deltasOferta' ;zeros(2*Qdiscre,1)]
-
-        @variable(m, y[i=QtdVariaveis-2*Qdiscre+1:QtdVariaveis]>=0, Bin)
-
-        @variable(m, dual[i=QtdComp+3:2*QtdComp+3]>=0)
-
-        p, n = size(A)
-        Astd = zeros(p,p+n)
-        cstd = zeros(p+n)
-        Astd = [A eye(p)]
-        cstd = [c ; zeros(p)]
-
-        #---------------------------
-
-        p,k = size(Astd)
-        @variable(m, x[i=1:QtdComp+2]>=0)
-        @variable(m, xc[i=2*QtdComp+4:QtdVariaveis-2*Qdiscre]>=0)
-        @variable(m, z[i=QtdVariaveis+1:k]>=0)
-        @constraints(m, begin
-        constrain[i=1:p], sum(Astd[i,j]*x[j] for j=1:QtdComp+2)+sum(Astd[i,k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(Astd[i,l]*z[l] for l=QtdVariaveis+1:k)+sum(Astd[i,h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(Astd[i,u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre)<= b[i]
-        end)
-        @objective(m, Max, sum(cstd[j]*x[j] for j=1:QtdComp+2)+sum(cstd[k]*y[k] for k=QtdVariaveis-2*Qdiscre+1:QtdVariaveis)+sum(cstd[h]*dual[h] for h=QtdComp+3:2*QtdComp+3)+sum(cstd[u]*xc[u] for u=2*QtdComp+4:QtdVariaveis-2*Qdiscre))
-
-            
-        sol = solveMIP(m)
-        @test getobjectivevalue(m) ≈ 90  atol = exp10(-5)    
-        # vc tem que produzir 4.5, confiram
-    end                    
->>>>>>> origin/master
+    end
     setoutputs!(m,solution,testresult)
-    return solution       
-end       
-
+    return solution
+end
 
 
  #adicionado por Rodrigo Villas
