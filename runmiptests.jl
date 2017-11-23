@@ -5,6 +5,8 @@ testset = [
 
     (test2, "GB", "MIP-p"),
     (test_P1_Guilherme, "GB", "MIP-g1"),
+    (test_TSPbin7_Guilherme, "GB", "MIP-g1-TSP-bin"),
+    (test_TSPmip7_Guilherme, "GB", "MIP-g1-TSP-mip"),
     (test_PL_Infeasible_Guilherme, "GB", "MIP-inf-p"),
     (test_MIP_medio_Guilherme, "GB", "MIP-m"),
     (test_MIP_Grande_Guilherme, "GB", "MIP-g"),
@@ -58,7 +60,7 @@ testset = [
 
 ]
 
-function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver(); 
+function runtests(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver();
     author = String[], kind = String[], ignore = String[], name = "")
 
     table = MIPSolution[]
