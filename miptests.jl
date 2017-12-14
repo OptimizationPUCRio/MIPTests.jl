@@ -50,7 +50,7 @@ function setoutputs!(m,sol::MIPSolution, test)
         sol.intsols = m.ext[:solutions]
         end
     end
-    
+
     if haskey(m.ext,:status)
         if typeof(m.ext[:status]) <: Symbol
             sol.status = m.ext[:status]
@@ -1197,6 +1197,184 @@ function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
     return solution
 end
 
+#teste P1 TSP de 7 cidades formulação binária
+#adicionado por Guilherme Bodin
+function test_TSPbin7_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste da P1 Guilherme binário (TSP 7 cidades)" begin
+        number_of_nodes = 7
+
+        AdjacencyMatrix = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
+                           135.484    0.0     105.546   174.003   142.425    53.0094  105.991
+                           142.801  105.546     0.0      87.6641   59.0      63.8905   73.5527
+                           131.0    174.003    87.6641    0.0      31.9061  146.932   159.201
+                           117.154  142.425    59.0      31.9061    0.0     115.521   132.306
+                           153.473   53.0094   63.8905  146.932   115.521     0.0      55.4617
+                           201.022  105.991    73.5527  159.201   132.306    55.4617    0.0   ]
+
+             function num_edges(Matrix) # Retorna o número de arestas em uma matriz de adjacência
+               n_edges = (factorial(size(Matrix,1)))/(factorial(2)*factorial(size(Matrix,1)-2))
+               return round(Int64,n_edges)
+             end
+
+             function create_edges(Matrix) # Cria as arestas a partir da Matriz de Adjacencia
+               number_of_edges = num_edges(Matrix)
+               e = zeros(number_of_edges,2)
+               k=1;
+               for i=1:size(Matrix,1)
+                 for j=i+1:size(Matrix,2)
+                   e[k,1]=i
+                   e[k,2]=j
+                   k = k+1
+                 end
+               end
+               return round(Int64,e)
+             end
+
+             function cost_of_edges(Matrix) #Cria o vetor de custo associado a cada aresta
+               number_of_edges = num_edges(Matrix)
+               cost = zeros(number_of_edges,1)
+               k=1;
+               for i=1:size(Matrix,1)
+                 for j=i+1:size(Matrix,2)
+                   cost[k]=Matrix[i,j]
+                   k = k+1
+                 end
+               end
+               return cost
+             end
+
+             function delta(AdjacencyMatrix,EdgesMatrix) #Devolve nas colunas as arestas ligadas à cidade i correspondente ao indice da linha
+               lin=1
+               delta = zeros(size(AdjacencyMatrix,1),size(AdjacencyMatrix,1)-1)
+               for j=1:size(AdjacencyMatrix,1)
+                 col=1
+                 for i=1:size(EdgesMatrix,1)
+                   if (EdgesMatrix[i,1] == j || EdgesMatrix[i,2] == j)
+                     delta[lin,col]=i
+                     col=col+1
+                   end
+                 end
+                 lin=lin+1
+               end
+               return round(Int64,delta)
+             end
+
+             function subsets(Matrix) # Retorna todos os subconjuntos de vértices de uma Matriz de Adjacência
+               number_of_nodes = size(Matrix,1)
+               Subset_S = digits(1,2,number_of_nodes)
+               for i = 2:2^(number_of_nodes)-2
+                 aux = digits(i,2,number_of_nodes)
+                 Subset_S = hcat(Subset_S,aux)
+               end
+               return Subset_S
+             end
+
+             function edges_no_Subconjunto(pos,Subsets,number_of_nodes) #Seleciona todas as arestas possíveis em uma dada partição do conjunto de vértices
+               A = zeros(1,2)
+               for i=1:number_of_nodes
+                 if Subsets[i,pos]==1
+                   for j=1:number_of_nodes
+                     if Subsets[j,pos]==0
+                       A = vcat(A,[i j])
+                     end
+                   end
+                 end
+               end
+               return A
+             end
+
+             function ida_e_volta(A) # Recebe uma matriz A n x 2 e devolve uma matriz result 2*n x 2 com os elementos de A nas linhas 1 até n e o espelhamento dos elementos de A de n+1 até 2*n
+               A_aux = hcat(A,A[:,1])
+               A_aux = A_aux[:,2:3]
+               result = vcat(A,A_aux)
+               return result
+             end
+
+
+             function selecao_edges(e,edge_do_ciclo)
+               E = []
+               for i=1:size(e,1)
+                 for j=1:size(edge_do_ciclo,1)
+                   if edge_do_ciclo[j,1] == e[i,1]
+                     if edge_do_ciclo[j,2] == e[i,2]
+                       E = vcat(E,i)
+                     end
+                   end
+                 end
+               end
+               return E
+             end
+
+             e=create_edges(AdjacencyMatrix)
+             del = delta(AdjacencyMatrix,e)
+             S = subsets(AdjacencyMatrix)
+             number_of_edges = num_edges(AdjacencyMatrix)
+             number_of_nodes = size(AdjacencyMatrix,1)
+             C = cost_of_edges(AdjacencyMatrix)
+             @variable(m, Y[i=1:number_of_edges],Bin)
+             for i=1:number_of_nodes
+                 @constraint(m, sum(Y[del[i,j]] for j=1:number_of_nodes-1) == 2) # Garante que todas as cidades conectadas a 2 estradas (uma de entrada e outra de saída) no caminho ótimo
+             end
+             for i=1:size(S,2)
+                 edge_do_ciclo = ida_e_volta(edges_no_Subconjunto(i,S,number_of_nodes))
+                 E = selecao_edges(e,edge_do_ciclo)
+                 @constraint(m, sum(Y[E[j]] for j=1:size(E,1)) >= 2)
+             end
+             @objective(m,Min,sum(C[i]*Y[i] for i=1:number_of_edges))
+
+             solveMIP(m)
+             @test getobjectivevalue(m) ≈ 539.4139 atol = 1e-5
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#adicionado por Guilherme Bodin
+#TSP com a formulação MTZ (Muller Tucker Zemlin)
+#http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.7256&rep=rep1&type=pdf
+function test_TSPmip7_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste da P1 Guilherme mip (TSP 7 cidades)" begin
+        number_of_nodes = 7
+
+        C = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
+             135.484    0.0     105.546   174.003   142.425    53.0094  105.991
+             142.801  105.546     0.0      87.6641   59.0      63.8905   73.5527
+             131.0    174.003    87.6641    0.0      31.9061  146.932   159.201
+             117.154  142.425    59.0      31.9061    0.0     115.521   132.306
+             153.473   53.0094   63.8905  146.932   115.521     0.0      55.4617
+             201.022  105.991    73.5527  159.201   132.306    55.4617    0.0   ]
+
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, 2 <= u[i] <= number_of_nodes)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 539.4139 atol = 1e-5
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste PL Infeasible
+#adicionado por Guilherme Bodin
 function test_PL_Infeasible_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
@@ -1386,7 +1564,7 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
             0.0;
             0.0]
         U_buy2 = [0.0; 15.0; 7.0; 0.0; 9.0; 0.0; 0.0]
-        
+
         U_sell = [
             255.0;
             0.0;
@@ -1398,9 +1576,9 @@ function test_P1_Andrew_Bianca_viavel(solveMIP::Function, solver::MathProgBase.A
         U_sell2 = [31.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0]
 
 
-        @test norm(x - getvalue(X)) < 1e-4 || norm(x2 - getvalue(X))  < 1e-4 
-        @test norm(U_buy - getvalue(u_buy)) < 1e-4  || norm(U_buy2 - getvalue(u_buy) )< 1e-4 
-        @test norm(U_sell - getvalue(u_sell))< 1e-4  || norm(U_sell2 - getvalue(u_sell) ) < 1e-4 
+        @test norm(x - getvalue(X)) < 1e-4 || norm(x2 - getvalue(X))  < 1e-4
+        @test norm(U_buy - getvalue(u_buy)) < 1e-4  || norm(U_buy2 - getvalue(u_buy) )< 1e-4
+        @test norm(U_sell - getvalue(u_sell))< 1e-4  || norm(U_sell2 - getvalue(u_sell) ) < 1e-4
 
     end
     setoutputs!(myModel,solution,testresult)
