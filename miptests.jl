@@ -1202,7 +1202,7 @@ end
 function test_TSPbin7_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
     solution = MIPSolution()
     m = Model(solver = solver)
-    testresult = @testset "Teste da P1 Guilherme bin (TSP 7 cidades)" begin
+    testresult = @testset "Teste da P1 Guilherme binário (TSP 7 cidades)" begin
         number_of_nodes = 7
 
         AdjacencyMatrix = [0.0    135.484   142.801   131.0     117.154   153.473   201.022
