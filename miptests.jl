@@ -1331,6 +1331,7 @@ function test_TSPbin7_Guilherme(solveMIP::Function, solver::MathProgBase.Abstrac
     return solution
 end
 
+
 #adicionado por Guilherme Bodin
 #TSP com a formulação MTZ (Muller Tucker Zemlin)
 #http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.7256&rep=rep1&type=pdf
@@ -1359,7 +1360,8 @@ function test_TSPmip7_Guilherme(solveMIP::Function, solver::MathProgBase.Abstrac
             @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
         end
         for i=2:number_of_nodes
-            @constraint(m, 2 <= u[i] <= number_of_nodes)
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
             for j=2:number_of_nodes
                 @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
             end
@@ -1427,6 +1429,181 @@ function test_MIP_medio_Guilherme(solveMIP::Function, solver::MathProgBase.Abstr
     return solution
 end
 
+#teste MIP grande TSP de 20 cidades
+#adicionado por Guilherme Bodin
+function test_TSPmip20_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades)" begin
+        number_of_nodes = 20
+        srand(123)
+        C = 1000*rand(number_of_nodes,number_of_nodes)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1.621683320972e+03 rtol = 1e-2
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste MIP grande TSP de 25 cidades
+#adicionado por Guilherme Bodin
+function test_TSPmip25_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 25 cidades)" begin
+        number_of_nodes = 25
+        srand(123)
+        C = 1000*rand(number_of_nodes,number_of_nodes)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1862.2167124533548 rtol = 1e-2
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste MIP grande TSP de 30 cidades
+#adicionado por Guilherme Bodin
+function test_TSPmip30_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 30 cidades)" begin
+        number_of_nodes = 30
+        srand(123)
+        C = 1000*rand(number_of_nodes,number_of_nodes)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1.810912865231e+03 rtol = 1e-2
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste MIP grande TSP de 40 cidades
+#adicionado por Guilherme Bodin
+function test_TSPmip40_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 40 cidades)" begin
+        number_of_nodes = 40
+        srand(123)
+        C = 1000*rand(number_of_nodes,number_of_nodes)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1.847290056038e+03 rtol = 1e-2
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste MIP grande TSP de 50 cidades
+#adicionado por Guilherme Bodin
+function test_TSPmip50_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 50 cidades)" begin
+        number_of_nodes = 50
+        srand(123)
+        C = 1000*rand(number_of_nodes,number_of_nodes)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 1.868859333414e+03 rtol = 1e-2
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
 #teste MIP grande TSP de 100 cidades
 #adicionado por Guilherme Bodin
 function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
@@ -1438,7 +1615,8 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
         C = 1000*rand(100,100)
 
         @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
-        @variable(m, u[i=:1:number_of_nodes])
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
         for i=1:number_of_nodes
             @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
         end
@@ -1446,16 +1624,16 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
             @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
         end
         for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
             for j=2:number_of_nodes
-              if (i!=j)
-                @constraint(m, u[i] - u[j] + number_of_nodes*X[i,j] <= number_of_nodes-1)
-              end
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
             end
         end
         @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
 
         solveMIP(m)
-        @test getobjectivevalue(m) ≈ 1720.190204078063 atol = 1e-7
+        @test getobjectivevalue(m) ≈ 1720.190204078063 rtol = 1e-2
     end
     setoutputs!(m,solution,testresult)
     return solution
