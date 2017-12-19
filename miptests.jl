@@ -1214,7 +1214,7 @@ function test_P1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 539.4139 atol=1e-5
-        #@test getvalue(X) ≈ ans atol=1e-5
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1349,6 +1349,7 @@ function test_TSPbin7_Guilherme(solveMIP::Function, solver::MathProgBase.Abstrac
 
              solveMIP(m)
              @test getobjectivevalue(m) ≈ 539.4139 atol = 1e-5
+             @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1393,6 +1394,7 @@ function test_TSPmip7_Guilherme(solveMIP::Function, solver::MathProgBase.Abstrac
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 539.4139 atol = 1e-5
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1447,6 +1449,7 @@ function test_MIP_medio_Guilherme(solveMIP::Function, solver::MathProgBase.Abstr
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 2007.2884583133053 atol = 1e-7
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1482,6 +1485,7 @@ function test_TSPmip20_Guilherme(solveMIP::Function, solver::MathProgBase.Abstra
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.621683320972e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1517,6 +1521,7 @@ function test_TSPmip25_Guilherme(solveMIP::Function, solver::MathProgBase.Abstra
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1862.2167124533548 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1552,6 +1557,7 @@ function test_TSPmip30_Guilherme(solveMIP::Function, solver::MathProgBase.Abstra
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.810912865231e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1587,6 +1593,7 @@ function test_TSPmip40_Guilherme(solveMIP::Function, solver::MathProgBase.Abstra
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.847290056038e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1622,6 +1629,7 @@ function test_TSPmip50_Guilherme(solveMIP::Function, solver::MathProgBase.Abstra
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1.868859333414e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -1657,6 +1665,7 @@ function test_MIP_Grande_Guilherme(solveMIP::Function, solver::MathProgBase.Abst
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 1720.190204078063 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
@@ -2685,6 +2694,80 @@ function test_TSPmip15_tri1_Guilherme(solveMIP::Function, solver::MathProgBase.A
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 3.568782504787e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 15 cidades 2
+#Adicionado por Guilherme Bodin
+function test_TSPmip15_tri2_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 2)" begin
+        number_of_nodes = 15
+
+        C = DistancesMatrix(number_of_nodes, 1000, 13)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 3.384211212463e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 15 cidades 3
+#Adicionado por Guilherme Bodin
+function test_TSPmip15_tri3_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 3)" begin
+        number_of_nodes = 15
+
+        C = DistancesMatrix(number_of_nodes, 1000, 14)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 3.318929535042e+03 rtol = 1e-2
         @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
