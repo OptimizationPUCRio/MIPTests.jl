@@ -59,6 +59,29 @@ function setoutputs!(m,sol::MIPSolution, test)
     return nothing
 end
 
+#Apenas usado para os TSPs
+#Devolve a matrix de adjacecia do grafo de cidades n cidades em uma região de m^2 km^2, como regra m>5*n
+function DistancesMatrix(n, m, seed)
+  if (m<3*n)
+    return println("Por favor insira m e n tal que m > 3 * n")
+  end
+  srand(seed)
+  cities = rand(1:m,(n, 2))
+  Distances = Array{Float64}(n, n)
+  for i = 1:n, j = 1:n
+      distx = cities[i, 1] - cities[j, 1]
+      disty = cities[i, 2] - cities[j, 2]
+      Distances[i, j] = sqrt(distx^2 + disty^2)
+  end
+  for i = 2:n    # garante que não haverão 2 cidades com as mesmas coordenadas geográficas
+     for j = 1:i - 1
+        if (Distances[i, j] == 0)
+          return DistancesMatrix(n)
+        end
+     end
+  end
+  return Distances
+end
 
 
 #≈
@@ -2190,6 +2213,442 @@ function test_PL_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMath
         @objective(m, Min, sum(x[i] for i=1:50))
         solveMIP(m)
         @test m.objVal == 30
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 20 cidades 1
+#Adicionado por Guilherme Bodin
+function test_TSPmip20_tri1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 1)" begin
+        number_of_nodes = 20
+
+        C = DistancesMatrix(number_of_nodes, 1000, 12)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 3.853758033181e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 20 cidades 2
+#Adicionado por Guilherme Bodin
+function test_TSPmip20_tri2_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 2)" begin
+        number_of_nodes = 20
+
+        C = DistancesMatrix(number_of_nodes, 1000, 13)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 3.834810278681e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 20 cidades 3
+#Adicionado por Guilherme Bodin
+function test_TSPmip20_tri3_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 3)" begin
+        number_of_nodes = 20
+
+        C = DistancesMatrix(number_of_nodes, 1000, 14)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.077150345927e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 20 cidades 4
+#Adicionado por Guilherme Bodin
+function test_TSPmip20_tri4_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 4)" begin
+        number_of_nodes = 20
+
+        C = DistancesMatrix(number_of_nodes, 1000, 15)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 3.804359782647e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 25 cidades 1
+#Adicionado por Guilherme Bodin
+function test_TSPmip25_tri1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 25 cidades 1)" begin
+        number_of_nodes = 25
+
+        C = DistancesMatrix(number_of_nodes, 1000, 12)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.292777695366e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 25 cidades 2
+#Adicionado por Guilherme Bodin
+function test_TSPmip25_tri2_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 25 cidades 2)" begin
+        number_of_nodes = 25
+
+        C = DistancesMatrix(number_of_nodes, 1000, 13)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.248791490891e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 25 cidades 3
+#Adicionado por Guilherme Bodin
+function test_TSPmip25_tri3_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 25 cidades 3)" begin
+        number_of_nodes = 25
+
+        C = DistancesMatrix(number_of_nodes, 1000, 14)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.163873619375e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 25 cidades 4
+#Adicionado por Guilherme Bodin
+function test_TSPmip25_tri4_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 25 cidades 4)" begin
+        number_of_nodes = 25
+
+        C = DistancesMatrix(number_of_nodes, 1000, 15)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.430087133903e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 30 cidades 1
+#Adicionado por Guilherme Bodin
+function test_TSPmip30_tri1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 30 cidades 1)" begin
+        number_of_nodes = 30
+
+        C = DistancesMatrix(number_of_nodes, 1000, 12)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.660096761372e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 30 cidades 2
+#Adicionado por Guilherme Bodin
+function test_TSPmip30_tri2_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 30 cidades 2)" begin
+        number_of_nodes = 30
+
+        C = DistancesMatrix(number_of_nodes, 1000, 13)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.169629691068e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+#teste TSP repeitando desigualdade triangular 30 cidades 3
+#Adicionado por Guilherme Bodin
+function test_TSPmip30_tri3_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 30 cidades 3)" begin
+        number_of_nodes = 30
+
+        C = DistancesMatrix(number_of_nodes, 1000, 14)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.758175826950e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 30 cidades 4
+#Adicionado por Guilherme Bodin
+function test_TSPmip30_tri4_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 30 cidades 4)" begin
+        number_of_nodes = 30
+
+        C = DistancesMatrix(number_of_nodes, 1000, 15)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 4.763617254274e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
     return solution
