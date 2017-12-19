@@ -60,13 +60,13 @@ function setoutputs!(m,sol::MIPSolution, test)
 end
 
 #Apenas usado para os TSPs
-#Devolve a matrix de adjacecia do grafo de cidades n cidades em uma região de m^2 km^2, como regra m>5*n
+#Devolve a matrix de custos do grafo de cidades n cidades em uma região de m^2 km^2, como regra m>3*n
 function DistancesMatrix(n, m, seed)
   if (m<3*n)
     return println("Por favor insira m e n tal que m > 3 * n")
   end
   srand(seed)
-  cities = rand(1:m,(n, 2))
+  cities = rand(1:m, (n, 2))
   Distances = Array{Float64}(n, n)
   for i = 1:n, j = 1:n
       distx = cities[i, 1] - cities[j, 1]
@@ -2648,6 +2648,43 @@ function test_TSPmip30_tri4_Guilherme(solveMIP::Function, solver::MathProgBase.A
 
         solveMIP(m)
         @test getobjectivevalue(m) ≈ 4.763617254274e+03 rtol = 1e-2
+        @test m.ext[:status] == :Optimal
+    end
+    setoutputs!(m,solution,testresult)
+    return solution
+end
+
+
+#teste TSP repeitando desigualdade triangular 15 cidades 1
+#Adicionado por Guilherme Bodin
+function test_TSPmip15_tri1_Guilherme(solveMIP::Function, solver::MathProgBase.AbstractMathProgSolver = JuMP.UnsetSolver())
+    solution = MIPSolution()
+    m = Model(solver = solver)
+    testresult = @testset "Teste MIP Médio Guilherme (TSP 20 cidades 1)" begin
+        number_of_nodes = 15
+
+        C = DistancesMatrix(number_of_nodes, 1000, 12)
+
+        @variable(m, X[i=1:number_of_nodes,j=1:number_of_nodes], Bin)
+        @variable(m, u[i=1:number_of_nodes])
+        @constraint(m, u[1] == 1)
+        for i=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for j=1:number_of_nodes if j!=i) == 1 )
+        end
+        for j=1:number_of_nodes
+            @constraint(m,sum(X[i,j] for i=1:number_of_nodes if i!=j) == 1 )
+        end
+        for i=2:number_of_nodes
+            @constraint(m, u[i] <= number_of_nodes)
+            @constraint(m, u[i] >= 2)
+            for j=2:number_of_nodes
+                @constraint(m, u[i] - u[j] + 1 <= number_of_nodes*(1 - X[i,j]))
+            end
+        end
+        @objective(m, Min, sum(C[i,j]*X[i,j] for i=1:number_of_nodes, j=1:number_of_nodes))
+
+        solveMIP(m)
+        @test getobjectivevalue(m) ≈ 3.568782504787e+03 rtol = 1e-2
         @test m.ext[:status] == :Optimal
     end
     setoutputs!(m,solution,testresult)
